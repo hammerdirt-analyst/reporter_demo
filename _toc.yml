@@ -1,0 +1,16 @@
+# Table of contents
+
+format: jb-book
+root: titlepage
+parts:
+  - caption: Situation and solutions
+    chapters:
+    - file: the_llm_assistant
+    - file: references
+  - caption: Example 
+      - file: bielersee_example
+
+  
+     
+   
+ 

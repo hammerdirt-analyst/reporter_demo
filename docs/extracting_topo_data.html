@@ -1,0 +1,800 @@
+
+<!DOCTYPE html>
+
+
+<html lang="en" data-content_root="./" >
+
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>Land cover and land use &#8212; A Reporter</title>
+  
+  
+  
+  <script data-cfasync="false">
+    document.documentElement.dataset.mode = localStorage.getItem("mode") || "";
+    document.documentElement.dataset.theme = localStorage.getItem("theme") || "";
+  </script>
+  
+  <!-- Loaded before other Sphinx assets -->
+  <link href="_static/styles/theme.css?digest=3ee479438cf8b5e0d341" rel="stylesheet" />
+<link href="_static/styles/bootstrap.css?digest=3ee479438cf8b5e0d341" rel="stylesheet" />
+<link href="_static/styles/pydata-sphinx-theme.css?digest=3ee479438cf8b5e0d341" rel="stylesheet" />
+
+  
+  <link href="_static/vendor/fontawesome/6.5.2/css/all.min.css?digest=3ee479438cf8b5e0d341" rel="stylesheet" />
+  <link rel="preload" as="font" type="font/woff2" crossorigin href="_static/vendor/fontawesome/6.5.2/webfonts/fa-solid-900.woff2" />
+<link rel="preload" as="font" type="font/woff2" crossorigin href="_static/vendor/fontawesome/6.5.2/webfonts/fa-brands-400.woff2" />
+<link rel="preload" as="font" type="font/woff2" crossorigin href="_static/vendor/fontawesome/6.5.2/webfonts/fa-regular-400.woff2" />
+
+    <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=fa44fd50" />
+    <link rel="stylesheet" type="text/css" href="_static/styles/sphinx-book-theme.css?v=a3416100" />
+    <link rel="stylesheet" type="text/css" href="_static/togglebutton.css?v=13237357" />
+    <link rel="stylesheet" type="text/css" href="_static/copybutton.css?v=76b2166b" />
+    <link rel="stylesheet" type="text/css" href="_static/mystnb.4510f1fc1dee50b3e5859aac5469c37c29e427902b24a333a5f9fcb2f0b3ac41.css" />
+    <link rel="stylesheet" type="text/css" href="_static/sphinx-thebe.css?v=4fa983c6" />
+    <link rel="stylesheet" type="text/css" href="_static/sphinx-design.min.css?v=87e54e7c" />
+  
+  <!-- Pre-loaded scripts that we'll load fully later -->
+  <link rel="preload" as="script" href="_static/scripts/bootstrap.js?digest=3ee479438cf8b5e0d341" />
+<link rel="preload" as="script" href="_static/scripts/pydata-sphinx-theme.js?digest=3ee479438cf8b5e0d341" />
+  <script src="_static/vendor/fontawesome/6.5.2/js/all.min.js?digest=3ee479438cf8b5e0d341"></script>
+
+    <script src="_static/documentation_options.js?v=9eb32ce0"></script>
+    <script src="_static/doctools.js?v=9a2dae69"></script>
+    <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="_static/clipboard.min.js?v=a7894cd8"></script>
+    <script src="_static/copybutton.js?v=f281be69"></script>
+    <script src="_static/scripts/sphinx-book-theme.js?v=887ef09a"></script>
+    <script>let toggleHintShow = 'Click to show';</script>
+    <script>let toggleHintHide = 'Click to hide';</script>
+    <script>let toggleOpenOnPrint = 'true';</script>
+    <script src="_static/togglebutton.js?v=4a39c7ea"></script>
+    <script>var togglebuttonSelector = '.toggle, .admonition.dropdown';</script>
+    <script src="_static/design-tabs.js?v=f930bc37"></script>
+    <script>const THEBE_JS_URL = "https://unpkg.com/thebe@0.8.2/lib/index.js"; const thebe_selector = ".thebe,.cell"; const thebe_selector_input = "pre"; const thebe_selector_output = ".output, .cell_output"</script>
+    <script async="async" src="_static/sphinx-thebe.js?v=c100c467"></script>
+    <script>var togglebuttonSelector = '.toggle, .admonition.dropdown';</script>
+    <script>const THEBE_JS_URL = "https://unpkg.com/thebe@0.8.2/lib/index.js"; const thebe_selector = ".thebe,.cell"; const thebe_selector_input = "pre"; const thebe_selector_output = ".output, .cell_output"</script>
+    <script>window.MathJax = {"options": {"processHtmlClass": "tex2jax_process|mathjax_process|math|output_area"}}</script>
+    <script defer="defer" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <script>DOCUMENTATION_OPTIONS.pagename = 'extracting_topo_data';</script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="prev" title="Biel/Bienne - example city" href="biel_city_example.html" />
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <meta name="docsearch:language" content="en"/>
+  </head>
+  
+  
+  <body data-bs-spy="scroll" data-bs-target=".bd-toc-nav" data-offset="180" data-bs-root-margin="0px 0px -60%" data-default-mode="">
+
+  
+  
+  <div id="pst-skip-link" class="skip-link d-print-none"><a href="#main-content">Skip to main content</a></div>
+  
+  <div id="pst-scroll-pixel-helper"></div>
+  
+  <button type="button" class="btn rounded-pill" id="pst-back-to-top">
+    <i class="fa-solid fa-arrow-up"></i>Back to top</button>
+
+  
+  <input type="checkbox"
+          class="sidebar-toggle"
+          id="pst-primary-sidebar-checkbox"/>
+  <label class="overlay overlay-primary" for="pst-primary-sidebar-checkbox"></label>
+  
+  <input type="checkbox"
+          class="sidebar-toggle"
+          id="pst-secondary-sidebar-checkbox"/>
+  <label class="overlay overlay-secondary" for="pst-secondary-sidebar-checkbox"></label>
+  
+  <div class="search-button__wrapper">
+    <div class="search-button__overlay"></div>
+    <div class="search-button__search-container">
+<form class="bd-search d-flex align-items-center"
+      action="search.html"
+      method="get">
+  <i class="fa-solid fa-magnifying-glass"></i>
+  <input type="search"
+         class="form-control"
+         name="q"
+         id="search-input"
+         placeholder="Search this book..."
+         aria-label="Search this book..."
+         autocomplete="off"
+         autocorrect="off"
+         autocapitalize="off"
+         spellcheck="false"/>
+  <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd>K</kbd></span>
+</form></div>
+  </div>
+
+  <div class="pst-async-banner-revealer d-none">
+  <aside id="bd-header-version-warning" class="d-none d-print-none" aria-label="Version warning"></aside>
+</div>
+
+  
+    <header class="bd-header navbar navbar-expand-lg bd-navbar d-print-none">
+    </header>
+  
+
+  <div class="bd-container">
+    <div class="bd-container__inner bd-page-width">
+      
+      
+      
+      <div class="bd-sidebar-primary bd-sidebar">
+        
+
+  
+  <div class="sidebar-header-items sidebar-primary__section">
+    
+    
+    
+    
+  </div>
+  
+    <div class="sidebar-primary-items__start sidebar-primary__section">
+        <div class="sidebar-primary-item">
+
+  
+
+<a class="navbar-brand logo" href="titlepage.html">
+  
+  
+  
+  
+  
+  
+    <p class="title logo__title">A Reporter</p>
+  
+</a></div>
+        <div class="sidebar-primary-item">
+
+ <script>
+ document.write(`
+   <button class="btn navbar-btn search-button-field search-button__button" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="fa-solid fa-magnifying-glass"></i>
+    <span class="search-button__default-text">Search</span>
+    <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+   </button>
+ `);
+ </script></div>
+        <div class="sidebar-primary-item"><nav class="bd-links bd-docs-nav" aria-label="Main">
+    <div class="bd-toc-item navbar-nav active">
+        
+        <ul class="nav bd-sidenav bd-sidenav__home-link">
+            <li class="toctree-l1">
+                <a class="reference internal" href="titlepage.html">
+                    Reporting volunteer observations
+                </a>
+            </li>
+        </ul>
+        <p aria-level="2" class="caption" role="heading"><span class="caption-text">Situation and solutions</span></p>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="the_llm_assistant.html">The role of the llm assistant</a></li>
+<li class="toctree-l1"><a class="reference internal" href="project.html">Proposal</a></li>
+<li class="toctree-l1"><a class="reference internal" href="references.html">References</a></li>
+</ul>
+<p aria-level="2" class="caption" role="heading"><span class="caption-text">Example reports</span></p>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="bern_example.html">Bern - example canton</a></li>
+<li class="toctree-l1"><a class="reference internal" href="bern_lakes_example.html">Bern lakes - example canton</a></li>
+<li class="toctree-l1"><a class="reference internal" href="bielersee_example.html">Bielersee - example</a></li>
+<li class="toctree-l1"><a class="reference internal" href="bern_city_example.html">Bern city - example city</a></li>
+<li class="toctree-l1"><a class="reference internal" href="biel_city_example.html">Biel/Bienne - example city</a></li>
+</ul>
+<p aria-level="2" class="caption" role="heading"><span class="caption-text">Annex</span></p>
+<ul class="current nav bd-sidenav">
+<li class="toctree-l1 current active"><a class="current reference internal" href="#">Land cover and land use</a></li>
+</ul>
+
+    </div>
+</nav></div>
+    </div>
+  
+  
+  <div class="sidebar-primary-items__end sidebar-primary__section">
+  </div>
+  
+  <div id="rtd-footer-container"></div>
+
+
+      </div>
+      
+      <main id="main-content" class="bd-main" role="main">
+        
+        
+
+<div class="sbt-scroll-pixel-helper"></div>
+
+          <div class="bd-content">
+            <div class="bd-article-container">
+              
+              <div class="bd-header-article d-print-none">
+<div class="header-article-items header-article__inner">
+  
+    <div class="header-article-items__start">
+      
+        <div class="header-article-item"><button class="sidebar-toggle primary-toggle btn btn-sm" title="Toggle primary sidebar" data-bs-placement="bottom" data-bs-toggle="tooltip">
+  <span class="fa-solid fa-bars"></span>
+</button></div>
+      
+    </div>
+  
+  
+    <div class="header-article-items__end">
+      
+        <div class="header-article-item">
+
+<div class="article-header-buttons">
+
+
+
+
+
+<div class="dropdown dropdown-source-buttons">
+  <button class="btn dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false" aria-label="Source repositories">
+    <i class="fab fa-github"></i>
+  </button>
+  <ul class="dropdown-menu">
+      
+      
+      
+      <li><a href="https://github.com/hammerdirt-analyst/feb_2024" target="_blank"
+   class="btn btn-sm btn-source-repository-button dropdown-item"
+   title="Source repository"
+   data-bs-placement="left" data-bs-toggle="tooltip"
+>
+  
+
+<span class="btn__icon-container">
+  <i class="fab fa-github"></i>
+  </span>
+<span class="btn__text-container">Repository</span>
+</a>
+</li>
+      
+      
+      
+      
+      <li><a href="https://github.com/hammerdirt-analyst/feb_2024/issues/new?title=Issue%20on%20page%20%2Fextracting_topo_data.html&body=Your%20issue%20content%20here." target="_blank"
+   class="btn btn-sm btn-source-issues-button dropdown-item"
+   title="Open an issue"
+   data-bs-placement="left" data-bs-toggle="tooltip"
+>
+  
+
+<span class="btn__icon-container">
+  <i class="fas fa-lightbulb"></i>
+  </span>
+<span class="btn__text-container">Open issue</span>
+</a>
+</li>
+      
+  </ul>
+</div>
+
+
+
+
+
+
+<div class="dropdown dropdown-download-buttons">
+  <button class="btn dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false" aria-label="Download this page">
+    <i class="fas fa-download"></i>
+  </button>
+  <ul class="dropdown-menu">
+      
+      
+      
+      <li><a href="_sources/extracting_topo_data.ipynb" target="_blank"
+   class="btn btn-sm btn-download-source-button dropdown-item"
+   title="Download source file"
+   data-bs-placement="left" data-bs-toggle="tooltip"
+>
+  
+
+<span class="btn__icon-container">
+  <i class="fas fa-file"></i>
+  </span>
+<span class="btn__text-container">.ipynb</span>
+</a>
+</li>
+      
+      
+      
+      
+      <li>
+<button onclick="window.print()"
+  class="btn btn-sm btn-download-pdf-button dropdown-item"
+  title="Print to PDF"
+  data-bs-placement="left" data-bs-toggle="tooltip"
+>
+  
+
+<span class="btn__icon-container">
+  <i class="fas fa-file-pdf"></i>
+  </span>
+<span class="btn__text-container">.pdf</span>
+</button>
+</li>
+      
+  </ul>
+</div>
+
+
+
+
+<button onclick="toggleFullScreen()"
+  class="btn btn-sm btn-fullscreen-button"
+  title="Fullscreen mode"
+  data-bs-placement="bottom" data-bs-toggle="tooltip"
+>
+  
+
+<span class="btn__icon-container">
+  <i class="fas fa-expand"></i>
+  </span>
+
+</button>
+
+
+
+<script>
+document.write(`
+  <button class="btn btn-sm navbar-btn theme-switch-button" title="light/dark" aria-label="light/dark" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <span class="theme-switch nav-link" data-mode="light"><i class="fa-solid fa-sun fa-lg"></i></span>
+    <span class="theme-switch nav-link" data-mode="dark"><i class="fa-solid fa-moon fa-lg"></i></span>
+    <span class="theme-switch nav-link" data-mode="auto"><i class="fa-solid fa-circle-half-stroke fa-lg"></i></span>
+  </button>
+`);
+</script>
+
+
+<script>
+document.write(`
+  <button class="btn btn-sm navbar-btn search-button search-button__button" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="fa-solid fa-magnifying-glass fa-lg"></i>
+  </button>
+`);
+</script>
+<button class="sidebar-toggle secondary-toggle btn btn-sm" title="Toggle secondary sidebar" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <span class="fa-solid fa-list"></span>
+</button>
+</div></div>
+      
+    </div>
+  
+</div>
+</div>
+              
+              
+
+<div id="jb-print-docs-body" class="onlyprint">
+    <h1>Land cover and land use</h1>
+    <!-- Table of contents -->
+    <div id="print-main-content">
+        <div id="jb-print-toc">
+            
+            <div>
+                <h2> Contents </h2>
+            </div>
+            <nav aria-label="Page">
+                <ul class="visible nav section-nav flex-column">
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#defining-similar-locations">Defining similar locations</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#example-defining-the-land-use-for-one-location">Example: defining the land use for one location</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#land-use-profile">Land use profile</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#finding-similar-locations">Finding similar locations</a></li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#minimum-expected-values">Minimum Expected values</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#for-locations-that-have-never-been-sampled">For locations that have never been sampled</a></li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#using-qgis">Using QGIS</a></li>
+</ul>
+            </nav>
+        </div>
+    </div>
+</div>
+
+              
+                
+<div id="searchbox"></div>
+                <article class="bd-article">
+                  
+  <div class="cell tag_remove-input docutils container">
+</div>
+<section class="tex2jax_ignore mathjax_ignore" id="land-cover-and-land-use">
+<h1>Land cover and land use<a class="headerlink" href="#land-cover-and-land-use" title="Link to this heading">#</a></h1>
+<p><em>The land cover and land use are used to determine the similarity of one survey location to another. In this way we can evaluate the probable minimum amount of trash at a given location based on the physical environment.</em></p>
+<p>Land cover and land use provide information about the physical characteristics of a survey location. The land use and cover is measured by considering the proportion of land dedicated to specific purposes within a radius of 1’500 m of the survey location of interest. The specific puroposes are defined by the following map layers available at <a class="reference external" href="https://www.swisstopo.admin.ch/en/landscape-model-swisstlmregio">swissTLMRegio</a>:</p>
+<ol class="arabic simple">
+<li><p>Landcover (TLM_BODENBEDECKUNG)</p></li>
+<li><p>Streets (TLM_STRASSEN)</p></li>
+<li><p>Hydrology (TLM_GEWAESSER)</p></li>
+<li><p>Sports and recreation (TLM_FREIZEITAREAL)</p></li>
+<li><p>Public services (TLM_NUTZUNGSAREAL)</p></li>
+</ol>
+<section id="defining-similar-locations">
+<h2>Defining similar locations<a class="headerlink" href="#defining-similar-locations" title="Link to this heading">#</a></h2>
+<p>When comparing feature vectors in three-dimensional space, various distance metrics can be applied, each depending on the nature of the data and the type of comparison needed. <strong>Euclidean distance</strong> measures the straight-line distance between two points, making it suitable when the magnitude of differences in the same-scale features matters. <strong>Manhattan distance</strong> measures the sum of absolute differences across each dimension, which is useful when you prefer a more “axis-aligned” measure of difference, particularly when feature importance might vary along each axis. <strong>Cosine similarity</strong>, however, compares the orientation of the vectors in space, measuring how aligned they are regardless of magnitude. This is particularly relevant when the proportions between feature values are more important than their absolute values. In our analysis, cosine similarity was chosen because we are more interested in the relative proportions of the feature variables rather than their magnitudes.</p>
+<p>Cosine similarity measures the cosine of the angle between two vectors in multi-dimensional space, focusing on the direction of the vectors rather than their length. The similarity ranges from -1 (perfectly opposite directions) to 1 (identical directions), with 0 indicating orthogonal or no similarity. The formula normalizes the vectors to unit length, comparing only the relative proportions between the dimensions. Cosine similarity is especially useful when the magnitude of the vectors varies significantly, but the pattern or trend of the features is important.</p>
+<p>For example, imagine comparing two feature vectors:</p>
+<ul class="simple">
+<li><p><span class="math notranslate nohighlight">\( x = [0.4, 0.5, 0.6] \)</span></p></li>
+<li><p><span class="math notranslate nohighlight">\(y = [0.2, 0.25, 0.3] \)</span></p></li>
+</ul>
+<p>Even though the absolute values of (y) are smaller than those of (x), the proportions between dimensions remain the same (i.e., <span class="math notranslate nohighlight">\( 0.4/0.5 \approx 0.2/0.25\)</span>)). Cosine similarity will show that these two vectors are highly similar because their pattern or direction is nearly identical. By contrast, Euclidean distance would highlight the magnitude differences between the vectors, leading to a different measure of similarity.</p>
+</section>
+<section id="example-defining-the-land-use-for-one-location">
+<h2>Example: defining the land use for one location<a class="headerlink" href="#example-defining-the-land-use-for-one-location" title="Link to this heading">#</a></h2>
+<p>For each location the land use and land cover is calculated by first extracting the relevant features from the appropriate map layers within a radius of 1 500 m.</p>
+<div class="cell tag_remove-input docutils container">
+</div>
+<div class="cell tag_remove-input docutils container">
+<div class="cell_output docutils container">
+<img alt="_images/35654890b0bbed1713742527927f50bbf0e6dcb77d969096b6f558f7da73db5f.png" src="_images/35654890b0bbed1713742527927f50bbf0e6dcb77d969096b6f558f7da73db5f.png" />
+</div>
+</div>
+<section id="land-use-profile">
+<h3>Land use profile<a class="headerlink" href="#land-use-profile" title="Link to this heading">#</a></h3>
+<p>The land use profile is the array of values between 0 and 1 that contains the proportion of the buffer zone occupied by the different land use and land cover attributes within the buffer zone of a survey location.</p>
+<div class="cell tag_remove-input docutils container">
+<div class="cell_output docutils container">
+<div class="output text_html"><div>
+<style scoped>
+    .dataframe tbody tr th:only-of-type {
+        vertical-align: middle;
+    }
+
+    .dataframe tbody tr th {
+        vertical-align: top;
+    }
+
+    .dataframe thead th {
+        text-align: right;
+    }
+</style>
+<table border="1" class="dataframe">
+  <thead>
+    <tr style="text-align: right;">
+      <th></th>
+      <th>location</th>
+      <th>vineyards</th>
+      <th>lake</th>
+      <th>buildings</th>
+      <th>recreation</th>
+      <th>streets</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <th>0</th>
+      <td>quai-maria-belgia</td>
+      <td>0.015907</td>
+      <td>1.284248</td>
+      <td>0.983656</td>
+      <td>0.015428</td>
+      <td>13894.013291</td>
+    </tr>
+  </tbody>
+</table>
+</div></div></div>
+</div>
+</section>
+<section id="finding-similar-locations">
+<h3>Finding similar locations<a class="headerlink" href="#finding-similar-locations" title="Link to this heading">#</a></h3>
+<p>The similarity of a location to other locations is determined by the cosine similarity, the manhattan distance or the euclidean distance between the land use profile of the location of interest and the land use profile of previously surveyed locations. The default method is cosine similarity, the default similarity threshold is 0.9.</p>
+<div class="cell tag_remove-input docutils container">
+</div>
+<div class="cell tag_remove-input docutils container">
+<div class="cell_output docutils container">
+<img alt="_images/5b54cf5f47cfa345a0f32f20d0c6a7a7da07f977cb60307d35cd1248f5881b2f.png" src="_images/5b54cf5f47cfa345a0f32f20d0c6a7a7da07f977cb60307d35cd1248f5881b2f.png" />
+</div>
+</div>
+<div class="cell tag_remove-input docutils container">
+<div class="cell_output docutils container">
+<div class="output text_html"><div>
+<style scoped>
+    .dataframe tbody tr th:only-of-type {
+        vertical-align: middle;
+    }
+
+    .dataframe tbody tr th {
+        vertical-align: top;
+    }
+
+    .dataframe thead th {
+        text-align: right;
+    }
+</style>
+<table border="1" class="dataframe">
+  <thead>
+    <tr style="text-align: right;">
+      <th></th>
+      <th>location</th>
+      <th>vineyards</th>
+      <th>lake</th>
+      <th>buildings</th>
+      <th>recreation</th>
+      <th>streets</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <th>0</th>
+      <td>arabie</td>
+      <td>0.069983</td>
+      <td>1.061684</td>
+      <td>0.914234</td>
+      <td>0.014763</td>
+      <td>17114.587103</td>
+    </tr>
+  </tbody>
+</table>
+</div></div></div>
+</div>
+</section>
+</section>
+<section id="minimum-expected-values">
+<h2>Minimum Expected values<a class="headerlink" href="#minimum-expected-values" title="Link to this heading">#</a></h2>
+<p><em>The expected values are the minimum pcs/m we expect to find based on the survey results from similar locations.</em></p>
+<blockquote>
+<div><p>In the case of locations that were previously sampled the minimum expected value is the conditional probability given the results from the location of interest and the results from similar locations.</p>
+</div></blockquote>
+<section id="for-locations-that-have-never-been-sampled">
+<h3>For locations that have never been sampled<a class="headerlink" href="#for-locations-that-have-never-been-sampled" title="Link to this heading">#</a></h3>
+<p>The expected values or forecasts for a location that has never been sampled is the distribution of previous survey results from locations that meet the similarity threshold.</p>
+<div class="cell tag_remove-input docutils container">
+<div class="cell_output docutils container">
+<div class="output text_html"><div>
+<style scoped>
+    .dataframe tbody tr th:only-of-type {
+        vertical-align: middle;
+    }
+
+    .dataframe tbody tr th {
+        vertical-align: top;
+    }
+
+    .dataframe thead th {
+        text-align: right;
+    }
+</style>
+<table border="1" class="dataframe">
+  <thead>
+    <tr style="text-align: right;">
+      <th></th>
+      <th>pcs/m</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <th>count</th>
+      <td>50.000000</td>
+    </tr>
+    <tr>
+      <th>mean</th>
+      <td>1.161000</td>
+    </tr>
+    <tr>
+      <th>std</th>
+      <td>1.877075</td>
+    </tr>
+    <tr>
+      <th>min</th>
+      <td>0.000000</td>
+    </tr>
+    <tr>
+      <th>25%</th>
+      <td>0.162500</td>
+    </tr>
+    <tr>
+      <th>50%</th>
+      <td>0.450000</td>
+    </tr>
+    <tr>
+      <th>75%</th>
+      <td>1.150000</td>
+    </tr>
+    <tr>
+      <th>max</th>
+      <td>8.180000</td>
+    </tr>
+  </tbody>
+</table>
+</div></div></div>
+</div>
+</section>
+</section>
+<section id="using-qgis">
+<span id="usingqgis"></span><h2>Using QGIS<a class="headerlink" href="#using-qgis" title="Link to this heading">#</a></h2>
+<p>For this method we are using the land-cover layer from swissTLM regio</p>
+<p>finished columns = slug, attribute , attribute_type, area, dry,	scale</p>
+<p>In QGIS:</p>
+<ol class="arabic simple">
+<li><p>create a buffer around each survey point</p>
+<ul class="simple">
+<li><p>make sure that the survey location and feature_type is in the attributes of the new buffer layer</p></li>
+<li><p>the survey locations are loaded as points from .csv file</p></li>
+<li><p>reproject the points layer to the project CRS</p></li>
+</ul>
+</li>
+<li><p>use the new buffer layer as an overlay to the land-cover layer</p>
+<ul class="simple">
+<li><p>use the overlay intersection tool</p></li>
+<li><p>select the fields to keep from the buffer (slug and feature type)</p></li>
+<li><p>select the fields to keep from the land-cover layer</p></li>
+<li><p>run the function</p></li>
+<li><p>this creates a temporary layer called <em>intersection</em></p></li>
+</ul>
+</li>
+<li><p>get the surface area of all the land-cover and land-use features in each buffer of the temporary layer</p>
+<ul class="simple">
+<li><p>use the field calculator for the attribute table of the layer</p></li>
+<li><p>in the field calculator, make a new field and enter the formula <code class="docutils literal notranslate"><span class="pre">\$area</span></code></p></li>
+<li><p>for this example the method is elipsoid <em>bessel 1841 (epsg 7001)</em></p></li>
+<li><p>this is set in the properties of the QGIS project</p></li>
+<li><p>Export the layer as .csv</p></li>
+</ul>
+</li>
+<li><p>verify the land-use features per location</p>
+<ul class="simple">
+<li><p>drop duplicate values: use location, feature and area to define duplicates</p></li>
+<li><p>attention! different names for lake and reservoir</p>
+<ul>
+<li><p>change Stausee to See</p></li>
+</ul>
+</li>
+</ul>
+</li>
+<li><p>make a dry land feature</p>
+<ul class="simple">
+<li><p>this is the surface area of the buffer that is not covered by water</p></li>
+<li><p>substract the area of See from the area of the buffer</p></li>
+<li><p>identify survey locations that have siginifcant water features but are not listed as lakes</p></li>
+</ul>
+</li>
+<li><p>Scale the land-use attributes of interest to the available dry-land</p></li>
+</ol>
+<div class="cell tag_remove-input docutils container">
+<div class="cell_output docutils container">
+<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Author: hammerdirt-analyst
+
+conda environment: cantonal_report
+
+pandas    : 2.2.2
+geopandas : 0.14.4
+matplotlib: 3.8.4
+</pre></div>
+</div>
+</div>
+</div>
+</section>
+</section>
+
+    <script type="text/x-thebe-config">
+    {
+        requestKernel: true,
+        binderOptions: {
+            repo: "binder-examples/jupyter-stacks-datascience",
+            ref: "master",
+        },
+        codeMirrorConfig: {
+            theme: "abcdef",
+            mode: "python"
+        },
+        kernelOptions: {
+            name: "python3",
+            path: "./."
+        },
+        predefinedOutput: true
+    }
+    </script>
+    <script>kernelName = 'python3'</script>
+
+                </article>
+              
+
+              
+              
+              
+              
+                <footer class="prev-next-footer d-print-none">
+                  
+<div class="prev-next-area">
+    <a class="left-prev"
+       href="biel_city_example.html"
+       title="previous page">
+      <i class="fa-solid fa-angle-left"></i>
+      <div class="prev-next-info">
+        <p class="prev-next-subtitle">previous</p>
+        <p class="prev-next-title">Biel/Bienne - example city</p>
+      </div>
+    </a>
+</div>
+                </footer>
+              
+            </div>
+            
+            
+              
+                <div class="bd-sidebar-secondary bd-toc"><div class="sidebar-secondary-items sidebar-secondary__inner">
+
+
+  <div class="sidebar-secondary-item">
+  <div class="page-toc tocsection onthispage">
+    <i class="fa-solid fa-list"></i> Contents
+  </div>
+  <nav class="bd-toc-nav page-toc">
+    <ul class="visible nav section-nav flex-column">
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#defining-similar-locations">Defining similar locations</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#example-defining-the-land-use-for-one-location">Example: defining the land use for one location</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#land-use-profile">Land use profile</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#finding-similar-locations">Finding similar locations</a></li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#minimum-expected-values">Minimum Expected values</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#for-locations-that-have-never-been-sampled">For locations that have never been sampled</a></li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#using-qgis">Using QGIS</a></li>
+</ul>
+  </nav></div>
+
+</div></div>
+              
+            
+          </div>
+          <footer class="bd-footer-content">
+            
+<div class="bd-footer-content__inner container">
+  
+  <div class="footer-item">
+    
+<p class="component-author">
+By Roger Erismann
+</p>
+
+  </div>
+  
+  <div class="footer-item">
+    
+
+  <p class="copyright">
+    
+      © Copyright 2024.
+      <br/>
+    
+  </p>
+
+  </div>
+  
+  <div class="footer-item">
+    
+  </div>
+  
+  <div class="footer-item">
+    
+  </div>
+  
+</div>
+          </footer>
+        
+
+      </main>
+    </div>
+  </div>
+  
+  <!-- Scripts loaded after <body> so the DOM is not blocked -->
+  <script src="_static/scripts/bootstrap.js?digest=3ee479438cf8b5e0d341"></script>
+<script src="_static/scripts/pydata-sphinx-theme.js?digest=3ee479438cf8b5e0d341"></script>
+
+  <footer class="bd-footer">
+  </footer>
+  </body>
+</html>

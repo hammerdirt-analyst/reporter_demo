@@ -799,39 +799,39 @@ labels = {
         "German": "Parameterauswahl"
     },
     "step_1_subheader": {
-        "English": ":orange[Step 1:] Select regions or feature of interest",
-        "French": ":orange[Étape 1 :] Sélectionnez les régions ou caractéristiques d'intérêt",
-        "German": ":orange[Schritt 1 :] Wählen Sie Regionen oder interessante Merkmale aus"
+        "English": ":orange[Step 1: Select regions or feature of interest]",
+        "French": ":orange[Étape 1 : Sélectionnez les régions ou caractéristiques d'intérêt]",
+        "German": ":orange[Schritt 1 : Wählen Sie Regionen oder interessante Merkmale aus]"
     },
     "step_2_subheader": {
-        "English": ":orange[Step 2:] Select date range",
-        "French": ":orange[Étape 2 :] Sélectionnez la plage de dates",
-        "German": ":orange[Schritt 2:] Wählen Sie den Datumsbereich aus"
+        "English": ":orange[Step 2: Select date range]",
+        "French": ":orange[Étape 2 : Sélectionnez la plage de dates]",
+        "German": ":orange[Schritt 2: Wählen Sie den Datumsbereich aus]"
     },
     "step_3_subheader": {
-        "English": ":orange[Step 3:] Select objects of interest",
-        "French": ":orange[Étape 3 :] Sélectionnez les objets d'intérêt",
-        "German": ":orange[Schritt 3:] Wählen Sie interessante Objekte aus"
+        "English": ":orange[Step 3: Select objects of interest]",
+        "French": ":orange[Étape 3 : Sélectionnez les objets d'intérêt]",
+        "German": ":orange[Schritt 3: Wählen Sie interessante Objekte aus]"
     },
     "step_4_subheader": {
-        "English": ":orange[Step 4:] Filter data",
-        "French": ":orange[Étape 4 :] Filtrer les données",
-        "German": "orange[Schritt 4:] Daten filtern"
+        "English": ":orange[Step 4: Filter data]",
+        "French": ":orange[Étape 4 : Filtrer les données]",
+        "German": "orange[Schritt 4: Daten filtern]"
     },
     "step_5_subheader": {
-        "English": ":orange[Step 5:] Make rough draft",
-        "French": ":orange[Étape 5 :] Rédigez un brouillon",
-        "German": ":orange[Schritt 5:] Entwurf erstellen"
+        "English": ":orange[Step 5: Make rough draft]",
+        "French": ":orange[Étape 5 : Rédigez un brouillon]",
+        "German": ":orange[Schritt 5: Entwurf erstellen]"
     },
     "step_6_subheader": {
-        "English": ":orange[Step 6:] Scatterplot parameters",
-        "French": ":orange[Étape 6 :] Nuage de points",
-        "German": ":orange[Schritt 6:] Streuplot-Parameter"
+        "English": ":orange[Step 6: Scatterplot parameters]",
+        "French": ":orange[Étape 6 : Nuage de points]",
+        "German": ":orange[Schritt 6: Streuplot-Parameter]"
     },
     "step_7_subheader": {
-        "English": ":orange[Step 7:] Barchart parameters",
-        "French": ":orange[Étape 7 :] Diagramme en barres",
-        "German": ":orange[Schritt 7:] Balkendiagramm-Parameter"
+        "English": ":orange[Step 7: Barchart parameters]",
+        "French": ":orange[Étape 7 : Diagramme en barres]",
+        "German": ":orange[Schritt 7: Balkendiagramm-Parameter]"
     },
     "start_date": {
         "English": "Start Date",
@@ -867,6 +867,21 @@ labels = {
         "English": "Make Roughdraft",
         "French": "Créer un brouillon",
         "German": "Entwurf erstellen"
+    },
+    "survey_results": {
+        "English":"Survey results",
+        "French": "Résultats de l'enquête",
+        "German": "Umfrageergebnisse"
+    },
+    "discussion": {
+        "English": "Discussion",
+        "French": "Discussion",
+        "German": "Diskussion"
+    },
+    "shoreline_litter_assessment": {
+        "English": "Shoreline litter assessment",
+        "French": "Évaluation des déchets sur le littoral",
+        "German": "Bewertung des Küstenmülls"
     }
 
 }
@@ -930,7 +945,10 @@ def lat_lon():
 
 initialize_session_state(load_survey_data=load_survey_data)
 
-st.header("Shoreline litter assessment")
+if 'language' not in st.session_state:
+    st.header("Shoreline litter assessment")
+else:
+    st.header(labels["shoreline_litter_assessment"][st.session_state['language']])
 language = st.radio(
     "", ["English", "French", "German"], index=0, horizontal=True, key="language"
 )
@@ -1067,7 +1085,10 @@ with st.expander(f"**{labels['parameter_selection'][language]}**", expanded=Fals
         if st.button(labels["make_roughdraft"][language], key="make_roughdraft_button"):
             st.session_state["final_selected_parameters"] = selected_parameters
 
-st.subheader("Survey results")
+if "language" not in st.session_state:
+    st.subheader("Survey results")
+else:
+    st.subheader(labels["survey_results"][st.session_state['language']])
 
 tab1, tab2, tab3, tab4, tab5 = st.tabs(["Summary", labels["step_6_subheader"][language], labels["step_7_subheader"][language], "inventory", "Rough Draft"])
 
@@ -1200,7 +1221,10 @@ with tab5:
     else:
         st.warning("No data available. Please apply filters.")
 
-st.subheader("Discussion")
+if 'language' not in st.session_state:
+    st.subheader("Discussion")
+else:
+    st.subheader(labels["discussion"][st.session_state['language']])
 if "final_selected_parameters" in st.session_state:
 
     if st.session_state["barchart_caption"] is not None and st.session_state["scatterplot_caption"] is not None:

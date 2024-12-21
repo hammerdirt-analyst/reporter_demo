@@ -717,6 +717,46 @@ intro_content = {
     """
 }
 
+English_instructions = (
+    "Make a summary of data and select chart contents.\n\n"
+    "1. Select a canton, city, lake or river.\n"
+    "2. Select your date range.\n"
+    "3. Select the objects of interest.\n"
+    "4. Apply filters.\n"
+    "5. Make rough drafts.\n"
+    "6. Define chart contents and create summary of chart.\n"
+    "7. Chat with data.\n\n"
+)
+
+French_instructions = (
+    "Faites un résumé des données et sélectionnez le contenu du graphique.\n\n"
+    "1. Sélectionnez un canton, une ville, un lac ou une rivière.\n"
+    "2. Sélectionnez votre plage de dates.\n"
+    "3. Sélectionnez les objets d'intérêt.\n"
+    "4. Appliquez des filtres.\n"
+    "5. Faites des brouillons.\n"
+    "6. Définissez le contenu du graphique et créez un résumé du graphique.\n"
+    "7. Discutez avec les données.\n\n"
+)
+
+German_instructions = (
+    "Erstellen Sie eine Datenzusammenfassung und wählen Sie die Diagramminhalte aus.\n\n"
+    "1. Wählen Sie einen Kanton, eine Stadt, einen See oder einen Fluss aus.\n"
+    "2. Wählen Sie Ihren Datumsbereich aus.\n"
+    "3. Wählen Sie die interessierenden Objekte aus.\n"
+    "4. Wenden Sie Filter an.\n"
+    "5. Erstellen Sie grobe Entwürfe.\n"
+    "6. Definieren Sie die Diagramminhalte und erstellen Sie eine Zusammenfassung des Diagramms.\n"
+    "7. Chatten Sie mit den Daten.\n\n"
+)
+
+instruction_labels = {
+    "English": English_instructions,
+    "French": French_instructions,
+    "German": German_instructions
+}
+
+
 labels = {
     "language": {
         "English": "Language",
@@ -882,6 +922,21 @@ labels = {
         "English": "Shoreline litter assessment",
         "French": "Évaluation des déchets sur le littoral",
         "German": "Bewertung des Küstenmülls"
+    },
+    "summary": {
+        "English": "Summary",
+        "French": "Résumé",
+        "German": "Zusammenfassung"
+    },
+    "rough_draft": {
+        "English": "Rough draft",
+        "French": "Brouillon",
+        "German": "Entwurf"
+    },
+    "inventory": {
+        "English": "Inventory",
+        "French": "Inventaire",
+        "German": "Inventar"
     }
 
 }
@@ -957,7 +1012,7 @@ st.image("resources/goodimage.webp")
 st.markdown(intro_two[language])
 with st.expander(f"**{labels['whats_this'][language]}**", expanded=False):
     st.markdown(intro_content[language])
-
+st.markdown(instruction_labels[language])
 with st.expander(f"**{labels['parameter_selection'][language]}**", expanded=False):
     col1, col2 = st.columns(2)
     with col1:
@@ -1006,19 +1061,58 @@ with st.expander(f"**{labels['parameter_selection'][language]}**", expanded=Fals
             available_feature_types = survey_data[survey_data["city"].isin(selected_cities)]["feature_type"].unique()
         if not selected_cantons and not selected_cities:
             available_feature_types = survey_data["feature_type"].unique()
+
+        # Define the feature types and their translations
+        feature_type_translations = {
+            "lake": {"English": "Lake", "French": "Lac", "German": "See"},
+            "river": {"English": "River", "French": "Rivière", "German": "Fluss"},
+            "both": {"English": "Both", "French": "Les deux", "German": "Beide"}
+        }
+
+        # User's language selection
+        # language = "French"  # This would be dynamically set based on user preference
+
+        # Define the available feature types
+        # available_feature_types = ["lake", "river"]  # Example available types
         feature_type_mapping = {"l": "lake", "r": "river"}
         available_feature_types_labels = [feature_type_mapping[ft] for ft in available_feature_types if
                                           ft in feature_type_mapping]
         if len(available_feature_types_labels) > 1:
             available_feature_types_labels.append("both")
 
+        # Include 'both' option if multiple feature types are available
+        # if len(available_feature_types) > 1:
+        #     available_feature_types.append("both")
+
+
+        # Function to format the display of radio options
+        def format_option(option):
+            return feature_type_translations[option][language]
+
+
+        # Display the radio button with translated options
         feature_type = st.radio(
-            label=labels["feature_type"][language],
+            label="Select feature type",
             options=available_feature_types_labels if available_feature_types_labels else ["both"],
+            format_func=format_option,
             horizontal=True,
             index=0,
             key="feature_type"
         )
+
+        # feature_type_mapping = {"l": "lake", "r": "river"}
+        # available_feature_types_labels = [feature_type_mapping[ft] for ft in available_feature_types if
+        #                                   ft in feature_type_mapping]
+        # if len(available_feature_types_labels) > 1:
+        #     available_feature_types_labels.append("both")
+        #
+        # feature_type = st.radio(
+        #     label=labels["feature_type"][language],
+        #     options=available_feature_types_labels if available_feature_types_labels else ["both"],
+        #     horizontal=True,
+        #     index=0,
+        #     key="feature_type"
+        # )
 
         st.write(f'**{labels["step_2_subheader"][language]}**')
 
@@ -1090,7 +1184,7 @@ if "language" not in st.session_state:
 else:
     st.subheader(labels["survey_results"][st.session_state['language']])
 
-tab1, tab2, tab3, tab4, tab5 = st.tabs(["Summary", labels["step_6_subheader"][language], labels["step_7_subheader"][language], "inventory", "Rough Draft"])
+tab1, tab2, tab3, tab4, tab5 = st.tabs([labels["summary"][language], labels["step_6_subheader"][language], labels["step_7_subheader"][language], labels["inventory"][language], labels["rough_draft"][language]])
 
 with tab1:
     if "final_selected_parameters" in st.session_state:
@@ -1143,7 +1237,7 @@ with tab1:
             st.plotly_chart(st.session_state["map_fig"], use_container_width=True)
             chart_data = st.session_state.get("filtered_data", pd.DataFrame())
     else:
-        st.warning("No roughdraft created yet. Pleas apply filters after setting your filters.")
+        st.warning("No rough-draft created")
         current_llm = use_model(**model_args_no_streaming)
         chart_data = pd.DataFrame()
 
@@ -1165,8 +1259,8 @@ with tab2:
 
         if st.session_state.get("scatterplot_caption"):
             st.write(st.session_state["scatterplot_caption"])
-        else:
-            st.warning("No data available. Please apply filters.")
+    else:
+        st.warning("No data available. Please apply filters.")
 
 with tab3:
     if not chart_data.empty:
@@ -1219,7 +1313,7 @@ with tab5:
     if "final_selected_parameters" in st.session_state:
         st.write(st.session_state["rough_drafts"])
     else:
-        st.warning("No data available. Please apply filters.")
+        st.warning("Select parameters, update the chart definitions and then you can chat with the data")
 
 if 'language' not in st.session_state:
     st.subheader("Discussion")

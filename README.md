@@ -2,7 +2,7 @@
 
 The reporter is an implementation of llms and ML pipelines to report beach litter surveys.
 
-
+https://www.bafu.admin.ch/bafu/fr/home/themes/dechets/dossiers/des-dechets-aux-abords-des-lacs-et-cours-d-eau-suisses.html
 
 __It is based on a lot of previous work:__
 

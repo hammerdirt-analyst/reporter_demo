@@ -1,14 +1,10 @@
-
 from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
-
 import reporting_methods
 import plotly.express as px
 import streamlit as st
 import pandas as pd
-
+import prompts
 from dotenv import load_dotenv
-
-
 from langchain_openai import ChatOpenAI
 from langchain_core.messages import (
     HumanMessage,
@@ -16,7 +12,7 @@ from langchain_core.messages import (
 )
 
 load_dotenv()
-
+language_column_map = {"English": "en", "French": "fr", "German": "de"}
 def use_model(**kwargs):
     if kwargs.get('name') == 'openai':
         kwargs.pop('name')
@@ -24,12 +20,8 @@ def use_model(**kwargs):
     else:
         return "No model found"
 
-model_args_no_streaming = dict(name='openai', model="gpt-4o-mini", temperature=0.6, max_tokens=1000,
-                                       streaming=False)
-
-model_args_streaming = dict(name='openai', model="gpt-4o-mini", temperature=0.6, max_tokens=1000)
-
-def translate_state_to_meta(state, code_groups, location, boundary):
+def translate_state_to_meta(state, code_groups, location, boundary) -> reporting_methods.ReportMeta:
+    """Converts the form state into a ReportMeta object. The report_meta object is used to filter the data and generate reports."""
 
     meta = {
         "name": location,
@@ -53,7 +45,7 @@ def translate_state_to_meta(state, code_groups, location, boundary):
 
     return reporting_methods.ReportMeta(**meta)
 
-def filter_dataframe_with_reportmeta(report_meta: reporting_methods.ReportMeta, data):
+def filter_dataframe_with_reportmeta(report_meta: reporting_methods.ReportMeta, data: pd.DataFrame):
     """
     Filters the DataFrame based on the conditions provided in report_meta.
 
@@ -61,7 +53,7 @@ def filter_dataframe_with_reportmeta(report_meta: reporting_methods.ReportMeta, 
     ----------
     report_meta : dict
         Dictionary containing the filtering criteria.
-    state : AppState
+    data : pd.DataFrame
         The application state containing the DataFrame to filter.
 
     Returns
@@ -69,52 +61,52 @@ def filter_dataframe_with_reportmeta(report_meta: reporting_methods.ReportMeta, 
     pd.DataFrame
         The filtered DataFrame.
     """
-    filtered_data = data.copy()
+    f_data = data.copy()
 
     # Apply date range filter
     if report_meta.get('start'):
-        filtered_data = filtered_data[filtered_data['date'] >= f"{report_meta.start}"]
+        f_data = f_data[f_data['date'] >= f"{report_meta.start}"]
+
     if report_meta.get('end'):
-        filtered_data = filtered_data[filtered_data['date'] <= f"{report_meta.end}"]
+        f_data = f_data[f_data['date'] <= f"{report_meta.end}"]
 
     # Apply boundary conditions
     if report_meta.get('boundary') and report_meta.boundary_name:
         boundary = report_meta.boundary
         boundary_name = report_meta.boundary_name
-        filtered_data = filtered_data[filtered_data[boundary] == boundary_name]
+        f_data = f_data[f_data[boundary] == boundary_name]
 
     # Apply feature type filter
     if report_meta.get('feature_type'):
         if report_meta.feature_type == 'lake':
-            filtered_data = filtered_data[filtered_data['feature_type'] == 'l']
+            f_data = f_data[f_data['feature_type'] == 'l']
         elif report_meta.feature_type == 'river':
-            filtered_data = filtered_data[filtered_data['feature_type'] == 'r']
+            f_data = f_data[f_data['feature_type'] == 'r']
 
     # Apply feature name filter
     if report_meta.get('feature_name'):
-        filtered_data = filtered_data[filtered_data['feature_name'] == report_meta.feature_name]
+        f_data = f_data[f_data['feature_name'] == report_meta.feature_name]
 
     # Apply object codes filter
     if report_meta.get('report_codes'):
         codes = report_meta.report_codes
-        filtered_data = filtered_data[filtered_data['code'].isin(codes)]
+        f_data = f_data[f_data['code'].isin(codes)]
 
-    return filtered_data
+    return f_data
 
-
-def baseline_report_and_data(report_meta: reporting_methods.ReportMeta, data, code_material):
+def baseline_report_and_data(report_meta: reporting_methods.ReportMeta, data, material_spec):
 
     df = filter_dataframe_with_reportmeta(report_meta, data)
-    s, l = reporting_methods.make_report_objects(df, feature_variables=report_meta.columns_of_interest,
-                               info_columns=report_meta.info_columns)
+    survey_report = reporting_methods.SurveyReport(df) # , feature_variables=report_meta.columns_of_interest,
+                               # info_columns=report_meta.info_columns)
 
     # baseline report sections
-    admin_boundaries = reporting_methods.extract_roughdraft_text(s.administrative_boundaries())
-    features = reporting_methods.extract_roughdraft_text(s.feature_inventory())
-    summary_stats = reporting_methods.extract_roughdraft_text(s.sampling_results_summary)
-    materials = reporting_methods.extract_roughdraft_text(s.material_report(code_material))
-    survey_totals = reporting_methods.extract_roughdraft_text(reporting_methods.survey_totals_for_all_info_cols(report_meta, s))
-    inventory = reporting_methods.extract_roughdraft_text(s.object_summary())
+    admin_boundaries = reporting_methods.extract_roughdraft_text(survey_report.administrative_boundaries())
+    features = reporting_methods.extract_roughdraft_text(survey_report.feature_inventory())
+    summary_stats = reporting_methods.extract_roughdraft_text(survey_report.sampling_results_summary)
+    materials = reporting_methods.extract_roughdraft_text(survey_report.material_report(material_spec))
+    survey_totals = reporting_methods.extract_roughdraft_text(reporting_methods.survey_totals_for_all_info_cols(report_meta, survey_report))
+    inventory = reporting_methods.extract_roughdraft_text(survey_report.object_summary())
 
     # report title section
     title = "## " + report_meta.report_title + "\n"
@@ -129,13 +121,13 @@ def baseline_report_and_data(report_meta: reporting_methods.ReportMeta, data, co
 
     return intro
 
-def generate_reports(state, code_groups, code_material, data):
+def generate_reports(state, code_groups, material_spec, data):
     reports = []
 
     if len(state['canton']) > 0:
         for location in state['canton']:
             meta = translate_state_to_meta(state, code_groups, location, "canton")
-            report = baseline_report_and_data(meta, data, code_material)
+            report = baseline_report_and_data(meta, data, material_spec)
             reports.append(report)
 
     if len(state['city']) > 0:
@@ -152,30 +144,30 @@ def generate_reports(state, code_groups, code_material, data):
 
     return "\n".join(reports)
 
-def map_markers(filtered_data, lat_lon):
+def map_markers(f_data, map_coords):
     """Map the markers"""
 
-    nsamples = filtered_data.groupby('location', observed=True)['sample_id'].nunique()
-    qty_location = filtered_data.groupby('location', observed=True)['quantity'].sum()
-    rate_location = filtered_data.groupby('location', observed=True)['pcs/m'].mean().round(2)
-    last_sample = filtered_data.groupby('location', observed=True)['date'].max()
+    nsamples = f_data.groupby('location', observed=True)['sample_id'].nunique()
+    qty_location = f_data.groupby('location', observed=True)['quantity'].sum()
+    rate_location = f_data.groupby('location', observed=True)['pcs/m'].mean().round(2)
+    last_sample = f_data.groupby('location', observed=True)['date'].max()
 
     # merge the pop-up information with the gps coordinates
     df = pd.concat([nsamples, qty_location, rate_location, last_sample], axis=1)
-    df = df.merge(lat_lon[['longitude', 'latitude']], left_index=True, right_index=True)
+    df = df.merge(map_coords[['longitude', 'latitude']], left_index=True, right_index=True)
     df['location'] = df.index
     df.rename(columns={'sample_id': 'nsamples', 'date': 'last sample'}, inplace=True)
     df.reset_index(drop=False, inplace=True)
     return df
 
-def scatter_map(filtered_data, lat_lon):
+def scatter_map(f_data, map_coords):
     """
     Generates a map with markers using Plotly's scatter_map.
     - Markers use lat/lon from map_markers.
     - Hover information includes samples, quantity, pcs/m, and last sample date.
     """
     # Call your map_markers function to get the processed data
-    df = map_markers(filtered_data, lat_lon)
+    df = map_markers(f_data, map_coords)
     print("Making map markers\n")
     print(f"Map marker columns: {', '.join(df.columns)}")
 
@@ -194,8 +186,7 @@ def scatter_map(filtered_data, lat_lon):
         lat="latitude",
         lon="longitude",
         hover_name="location",
-        hover_data=['quantity', 'nsamples', 'pcs/m', 'last sample'],  # Hover text dynamically formatted
-        # color_discrete_sequence=["fuchsia"],
+        hover_data=['quantity', 'nsamples', 'pcs/m', 'last sample'],
         zoom=8,
         height=500
     )
@@ -219,202 +210,138 @@ def scatter_map(filtered_data, lat_lon):
 
     return fig
 
-
 def apply_filters():
     """
-    Updates `filtered_data` based on the current selections in session state.
+    Updates `f_data` based on the current selections in session state.
     Uses OR logic for each selection and dynamically narrows down options.
     """
     print("Applying filters\n")
-    survey_data = st.session_state["survey_data"]  # Original unfiltered data
-    filtered_data = survey_data.copy()
+    s_data = st.session_state["survey_data"]  # Original unfiltered data
+    f_data = s_data.copy()
 
     # Step 1: Filter by Canton
-    selected_cantons = st.session_state["canton"]
-    if selected_cantons:
-        filtered_data = filtered_data[filtered_data["canton"].isin(selected_cantons)]
+    s_cantons = st.session_state["canton"]
+    if s_cantons:
+        f_data = f_data[f_data["canton"].isin(selected_cantons)]
 
     # Step 2: Filter by City
-    selected_cities = st.session_state["city"]
-    if selected_cities:
-        filtered_data = filtered_data[filtered_data["city"].isin(selected_cities)]
+    s_cities = st.session_state["city"]
+    if s_cities:
+        f_data = f_data[f_data["city"].isin(selected_cities)]
 
     # Step 3: Filter by Feature Name
-    selected_feature_names = st.session_state["feature_name"]
-    if selected_feature_names:
-        filtered_data = filtered_data[filtered_data["feature_name"].isin(selected_feature_names)]
+    s_feature_names = st.session_state["feature_name"]
+    if s_feature_names:
+        f_data = f_data[f_data["feature_name"].isin(selected_feature_names)]
 
     # Step 4: Filter by Feature Type
-    feature_type = st.session_state["feature_type"]
-    if feature_type != "both":
+    f_type = st.session_state["feature_type"]
+    if f_type != "both":
         feature_code = "l" if feature_type == "lake" else "r"
-        filtered_data = filtered_data[filtered_data["feature_type"] == feature_code]
-    selected_codes = st.session_state['selected_objects']
-    if selected_codes:
-        filtered_data = filtered_data[filtered_data['code'].isin(selected_codes)]
+        f_data = f_data[f_data["feature_type"] == feature_code]
+    s_codes = st.session_state['selected_objects']
+    if s_codes:
+        f_data = f_data[f_data['code'].isin(selected_codes)]
     date_range = st.session_state["date_range"]
     if date_range:
         print(date_range, type(date_range[0]))
-        print(type(filtered_data['date'].min()), filtered_data['date'].max())
-        print(filtered_data['date'].min() < pd.Timestamp(date_range[1]))
-        mask = (filtered_data['date'] >= pd.Timestamp(date_range[0])) & (filtered_data['date'] <= pd.Timestamp(date_range[1]))
-        filtered_data = filtered_data[mask]
+        print(type(f_data['date'].min()), f_data['date'].max())
+        print(f_data['date'].min() < pd.Timestamp(date_range[1]))
+        mask = (f_data['date'] >= pd.Timestamp(date_range[0])) & (f_data['date'] <= pd.Timestamp(date_range[1]))
+        f_data = f_data[mask]
     # Update session state with the filtered data
-    st.session_state["filtered_data"] = filtered_data.reset_index(drop=True)
+    st.session_state["filtered_data"] = f_data.reset_index(drop=True)
 
-def clear_filters(load_survey_data):
+def clear_filters(data_from_cache):
     """Clear all filters and reinitialize session state."""
     # Clear all session state variables
     st.session_state.clear()
 
     # Reinitialize the session state
-    initialize_session_state(load_survey_data)
+    initialize_session_state(data_from_cache)
 
-def update_date_range(filtered_data):
+def update_date_range(f_data):
     """
     Updates the min and max date range based on the filtered data.
     Ensures all dates are consistently `datetime.date` objects.
     """
     # Calculate the min and max dates as datetime.date
-    min_date = filtered_data["date"].min()
-    max_date = filtered_data["date"].max()
+    min_d = f_data["date"].min()
+    max_d = f_data["date"].max()
 
     # Ensure date_range exists in session state
     if "date_range" not in st.session_state or len(st.session_state["date_range"]) != 2:
-        st.session_state["date_range"] = (min_date, max_date)
+        st.session_state["date_range"] = (min_d, max_d)
 
     # Extract start_date and end_date from session state
-    start_date, end_date = st.session_state["date_range"]
-    print(type(start_date), type(end_date))
+    start_d, end_d = st.session_state["date_range"]
 
     # Convert to datetime.date if they are Timestamps
-    if isinstance(start_date, pd.Timestamp):
+    if isinstance(start_d, pd.Timestamp):
         pass
     else:
-        start_date = pd.to_datetime(start_date)
-    if isinstance(end_date, pd.Timestamp):
+        start_d = pd.to_datetime(start_d)
+    if isinstance(end_d, pd.Timestamp):
         pass
     else:
-        end_date = pd.to_datetime(end_date)
+        end_d = pd.to_datetime(end_d)
 
     # Clamp the start_date and end_date to the min and max dates
-    start_date = max(min_date, min(start_date, max_date))
-    end_date = max(min_date, min(end_date, max_date))
+    start_d = max(min_d, min(start_d, max_d))
+    end_d = max(min_d, min(end_d, max_d))
 
     # Update session state with the clamped values
-    st.session_state["date_range"] = (start_date, end_date)
+    st.session_state["date_range"] = (start_d, end_d)
 
-    return start_date, end_date
+    return start_d, end_d
 
-def abstract_prompt(language, feature_type, objects, cantons):
-    """Prompt for the abstract generation task."""
-
-    if feature_type == "lake":
-        lakes_or_rivers = "lakes"
-    elif feature_type == "river":
-        lakes_or_rivers = "rivers"
-    else:
-        lakes_or_rivers = "lakes and rivers"
-
-    aprompt = (
-        f"You are a data scientist. You are writing the description of the data from a scatterplot. The data is  from"
-        f" observations of {objects} found along {lakes_or_rivers} in {', '.join(cantons)}. The data has been selected by the client."
-        " These observations are given in total pieces per meter per sample. A sample is defined by a location and a date",
-        ". Your task is to write an informative abstract about the user provided report. Each report has the following"
-        " sections:\n\nTitle, subtitle, summary",
-        "statistics, administrative boundaries,",
-        " the named features, and the material composition. After these sections the aggregated survey data is grouped",
-        " for different regions and features. Each report is concluded with an inventory of each of the objects selected",
-        " by the client.\n\nYour abstract must include information about the cities cantons or",
-        " features included in the report. It must also include the names of the objects (look in the inventory) which"
-        " are the subject of the report.",
-        " The fail rate is the rate at which we expect to find at least one of the objects at a survey.",
-        " From the summary statistics include The total number (quantity) of objects, the number of samples",
-        " (summary statistics) and start and end date of samples should also be mentioned.",
-        " The objects in the report are selected by the client. The report is about those objects and nothing more."
-        " You must answer in paragraph form, limit your response to two paragraphs.\n\nThis is an abstract for a"
-        " professional document. It should sound like one. We do not need any general closing statements. Your abstract"
-        f" only concerns the contents of the report.\n\nPlease reply in the following language: {language}."
-    )
-    return ''.join(aprompt)
-
-def scatterplot_prompt(start, end, interval, group_mean, objects, color, feature_type, cantons, language):
-    """
-    Generates a scatter plot prompt based on the provided parameters.
-    """
-    if feature_type == "lake":
-        lakes_or_rivers = "lakes"
-    elif feature_type == "river":
-        lakes_or_rivers = "rivers"
-    else:
-        lakes_or_rivers = "lakes and rivers"
-
-
-
-    prompt = (
-        f"You are a data scientist. You are writing the description of the data from a scatterplot. The data is  from"
-        f" observations of {objects} found along {lakes_or_rivers} in {', '.join(cantons)}. The data has been selected by the client."
-        " These observations are given in total pieces per meter per sample. A sample is defined by a location and a date",
-        ". Your task is to summarize the data in the plot AND identify any important features in the data.",
-        " The plot characteristics are as follows::\n\n1. x axis: date of the sample\n2. y axis: pieces per meter, the sum of all",
-        f" the objects found divided by the length of the shoreline that was surveyed.\n3. groups: {color} the regional aggregation",
-        f" of the surveys.\n4. x axis start date {start}, x axis end date {end}\n5. y axis 90% interval: {interval}\n\n",
-        f"The results by groups are as follows: {group_mean}\n\n.",
-        "Your summary must be brief and to the point. The client has an image of the plot and your summary is to help them understand.",
-        " Your audience is professional and they know how to read a scatterplot. Your summary should be about the data and not the plot."
-        " You must answer in paragraph form in a concise and factual manner. Limit your response to two paragraphs. No titles or labels are wanted.\n\n",
-        f"Your answer must be in the following language: {language}."
-    )
-
-    return ''.join(prompt)
-
-def scatterplot_caption(data, color_by, language, llm):
+def scatterplot_caption(data, color_by, selected_language, llm):
     """
     Generates a caption for the scatter plot based on the filtered data and the color_by parameter.
     """
     d = data.groupby(['sample_id', 'date', color_by], as_index=False)["pcs/m"].sum()
     grouped_data_mean = d.groupby([color_by], as_index=False)["pcs/m"].mean()
-    start_date, end_date = data.date.min().date(), data.date.max().date()
+    s_date, e_date = data.date.min().date(), data.date.max().date()
     ysummary = d["pcs/m"].describe(percentiles=[0.05, 0.25, 0.5, 0.75, 0.95])
     print(data.columns)
-    language_column_map = {"English": "en", "French": "fr", "German": "de"}
-    description_column = language_column_map[st.session_state["language"]]
-    objects = data[description_column].unique()
-    objects = ', '.join(objects)
-    cantons = data['canton'].unique()
-    feature_type = data['feature_type'].unique()
-    if len(feature_type) > 1:
-        feature_type = "both"
+
+    d_column = language_column_map[st.session_state["language"]]
+    s_objects = data[d_column].unique()
+    s_objects = ', '.join(s_objects)
+    s_cantons = data['canton'].unique()
+    s_feature_type = data['feature_type'].unique()
+    if len(s_feature_type) > 1:
+        s_feature_type = "both"
     else:
-        if feature_type[0] == 'l':
-            feature_type = "lake"
+        if s_feature_type[0] == 'l':
+            s_feature_type = "lake"
         else:
-            feature_type = "river"
-    querry = scatterplot_prompt(start_date, end_date, ysummary, grouped_data_mean, objects, color_by, feature_type, cantons, language)
-    abstract_message = [
+            s_feature_type = "river"
+    querry = prompts.scatterplot_prompt(s_date, e_date, ysummary, grouped_data_mean, s_objects, color_by, s_feature_type, s_cantons, selected_language)
+    scatterplot_message = [
         SystemMessage("follow the users instructions"),
         HumanMessage(content=querry)
     ]
 
-    response = llm.invoke(abstract_message)
-    caption = response.content
+    # aresponse = llm.invoke(scatterplot_message)
+    # caption = aresponse.content
 
-    return caption
+    return llm.stream(scatterplot_message)
 
-def scatterplot_title(language, labels, color):
+def scatterplot_title(s_language, s_labels, color):
     """
     Generates a title for a scatterplot in the specified language.
 
     Args:
-        language (str): The desired language for the title ("English", "French", "German").
-        labels (dict): A dictionary containing language-specific labels for the color groupings.
+        s_language (str): The desired language for the title ("English", "French", "German").
+        s_labels (dict): A dictionary containing language-specific labels for the color groupings.
         color (str): The key for the color grouping.
 
     Returns:
         str: The scatterplot title in the specified language.
     """
 
-    grouper = labels[color].get(language, labels[color].get("English"))
+    grouper = labels[color].get(s_language, s_labels[color].get("English"))
 
     title_templates = {
         "English": f"Cumulative pcs/m per survey by survey date, grouped by {grouper}",
@@ -424,7 +351,7 @@ def scatterplot_title(language, labels, color):
 
     return title_templates.get(language, title_templates["English"])
 
-def scatterplot(data, language, labels, color_by):
+def scatterplot(data, s_language, s_labels, color_by):
     """
     Creates a scatter plot.
     - x-axis: date
@@ -437,7 +364,7 @@ def scatterplot(data, language, labels, color_by):
         x="date",
         y="pcs/m",
         color=color_by,
-        title=scatterplot_title(language, labels, color_by),
+        title=scatterplot_title(s_language, s_labels, color_by),
         labels={"date": "", "pcs/m": "pieces/meter"},
     )
 
@@ -465,11 +392,12 @@ def scatterplot(data, language, labels, color_by):
     fig.update_yaxes(showgrid=True, gridwidth=.25, gridcolor='rgba(47, 79, 79, 0.5)')
     return fig
 
-def handle_grouped_data_for_barchart(data, x_axis, y_axis):
+def handle_grouped_data_for_barchart(data: pd.DataFrame, x_axis: str, y_axis: str) -> pd.DataFrame:
     """Aggregates data for a barchart according to user requests and data type"""
     print('Handling grouped data\n')
-    language_column_map = {"English": "en", "French": "fr", "German": "de"}
+
     description_column = language_column_map[st.session_state["language"]]
+
     if x_axis == 'object':
         x_axis = description_column
     if y_axis == "number of samples":
@@ -484,52 +412,19 @@ def handle_grouped_data_for_barchart(data, x_axis, y_axis):
 
     return grouped_data
 
-def barchart_prompt(data, x_axis, y_axis, language):
-    """Creates a prompt for a barchart given the data and the x and y axis labels"""
-
-    grouped_data = handle_grouped_data_for_barchart(data, x_axis, y_axis)
-    feature_type = data['feature_type'].unique()
-    if len(feature_type) > 1:
-        lakes_or_rivers = "lakes and rivers"
-    elif feature_type[0] == 'l':
-        lakes_or_rivers = "lakes"
-    else:
-        lakes_or_rivers = "rivers"
-    cantons = data['canton'].unique()
-    description_column = language_column_map[language]
-    objects = data[description_column].unique()
-    prompt = (
-        f"You are a data scientist. You are writing the description of the data from a bar plot. The data is  from"
-        f" observations of {', '.join(objects)} found along {lakes_or_rivers} in {', '.join(cantons)}. The data has been selected by the client."
-        f"Your task is to summarize the data in the bar chart AND identify any important features in the data.",
-        f"The barchart characteristics are as follows::\n\n1. x axis: {x_axis} this is one of the following: canton,"
-        " city, feautre_name, object. canton and city refer to locations in switzerland. feature_name refers to specific lakes or rivers.\n"
-        f"2. yaxis : {y_axis} this is one of the following quantity, pcs/m, number of samples. Quantity refers to the"
-        " number of objects found by x-axis category. pcs/m refers to the average number of objects observed per meter of shoreline."
-        " number of samples refers to the number of times that samples were taken per xaxis category. Or you could say number of trips to the beach\n\n"
-        f" the data used to create the chart is below:\n\n{grouped_data.to_markdown()}\n\n",
-        "Identify the min and max values in the charts. Identify or define the xlabels provide details. summary must be brief"
-        " and to the point. The client has an image of the plot and your summary is to help them understand.",
-        " Your audience is professional and they know how to read a barplot. Your summary should be about the data. Further analysis"
-        " is not needed. You must answer in paragraph form in a concise and factual manner.\n\n",
-        f"Your answer must be in the following language: {language}."
-    )
-
-    return ''.join(prompt)
-
-def barchart_caption(data, x_axis, y_axis, language, llm):
+def barchart_caption(data, x_axis, y_axis, s_language, llm):
     """Creates a narrative for a barchart given the data and the x and y axis labels"""
-
-    querry = barchart_prompt(data, x_axis, y_axis, language)
-    abstract_message = [
+    grouped_data = handle_grouped_data_for_barchart(data, x_axis, y_axis)
+    querry = prompts.barchart_prompt(data, grouped_data, x_axis, y_axis, s_language)
+    barchart_message = [
         SystemMessage("follow the users instructions"),
         HumanMessage(content=querry)
     ]
 
-    response = llm.invoke(abstract_message)
-    caption = response.content
+    aresponse = llm.stream(barchart_message)
+    # caption = aresponse.content
 
-    return caption
+    return aresponse
 
 def barchart(data, x_axis, y_axis):
     """
@@ -537,7 +432,6 @@ def barchart(data, x_axis, y_axis):
     - x-axis: one of the following ["canton", "city", "feature_name", "object"]
     - y-axis: one of the following ["quantity", "pcs/m", "number of samples"]
     """
-
 
     grouped_data = handle_grouped_data_for_barchart(data, x_axis, y_axis)
     if x_axis == "object":
@@ -582,9 +476,9 @@ def initialize_session_state(load_survey_data):
         st.session_state["survey_data"] = load_survey_data()
 
     if "date_range" not in st.session_state:
-        min_date = st.session_state["filtered_data"]["date"].min()
-        max_date = st.session_state["filtered_data"]["date"].max()
-        st.session_state["date_range"] = (min_date, max_date)
+        min_d = st.session_state["filtered_data"]["date"].min()
+        max_d = st.session_state["filtered_data"]["date"].max()
+        st.session_state["date_range"] = (min_d, max_d)
 
     if "rough_drafts" not in st.session_state:
         st.session_state["rough_drafts"] = "No roughdrafts generated yet."
@@ -598,32 +492,12 @@ def initialize_session_state(load_survey_data):
     if 'map_fig' not in st.session_state:
         st.session_state['map_fig'] = "No map generated yet."
 
-def reporter_prompt(summary, scatterplot, barchart, inventory, rough_draft):
-    aprompt = (
-                "You are helping a data scientist write a summary report of volunteer observations of objects found along",
-                " lakes and rivers in Switzerland. The data is collected using the JRC/EU method counting beach litter. This",
-                " method is defined in the _Guide for monitoriring marine litter in european seas. Your other reference document",
-                " is the federal report on litter density of swiss lakes (IQAASL) published in 2021 and available here:\n\n",
-                "[IQAASL End of Sampling 2021](https://hammerdirt-analyst.github.io/IQAASL-End-0f-Sampling-2021/)\n\n",
-                "The client has already prepared a rough draft of the report as well as a bar chart, scatter plot and map.",
-                " Your task is to answer the clients questions reference these reports. The client is preparing a decision",
-                " support document and is relying on your for brief answers that can be supported by the documments provided",
-                " below or the previously mentioned references. The client has provided the following documents:\n\n",
-                f"summary: {summary}\n\n",
-                f"scatterplot: {scatterplot}\n\n",
-                f"barchart: {barchart}\n\n",
-                f"inventory: {inventory}\n\n",
-                f"rough draft: {rough_draft}\n\n",
-                "!Instructions!\n\n"
-                "The column names and descriptions for inventory items:\n1. object: the use or plain language description"
-                "\n2. code: the MLW code for the item\n3. quantity: the total number of items found\n4. pcs/m: the average number"
-                " of items per meter of shoreline.\n5 % of total: the proportion of the curent set of data.\n6. number of samples:"
-                " the number of samples collected\n7. fail rate: the proportion of samples that contained the objects\n\n",
-                "You are to discuss plastics, trash or litter in the environment, citizen-science, swiss or european policy",
-                " concerning plastics and trash in the environment, probability and statistics, calculus, bayes theorem, bayesian statistics",
-                " other topics of a sensitive or sexual nature are not to be considered.",
-            )
-    return ''.join(aprompt)
+    if 'scatterplot_caption' not in st.session_state:
+        st.session_state['scatterplot_caption'] = None
+
+    if 'barchart_caption' not in st.session_state:
+        st.session_state['barchart_caption'] = None
+
 
 intro_one = {
     "English": """
@@ -755,7 +629,6 @@ instruction_labels = {
     "French": French_instructions,
     "German": German_instructions
 }
-
 
 labels = {
     "language": {
@@ -999,7 +872,10 @@ def lat_lon():
     return lat_lon
 
 initialize_session_state(load_survey_data=load_survey_data)
+model_args_no_streaming = dict(name='openai', model="gpt-4o-mini", temperature=0.6, max_tokens=1000,
+                                       streaming=False)
 
+model_args_streaming = dict(name='openai', model="gpt-4o-mini", temperature=0.6, max_tokens=1000)
 if 'language' not in st.session_state:
     st.header("Shoreline litter assessment")
 else:
@@ -1010,9 +886,12 @@ language = st.radio(
 st.markdown(intro_one[language])
 st.image("resources/goodimage.webp")
 st.markdown(intro_two[language])
+
 with st.expander(f"**{labels['whats_this'][language]}**", expanded=False):
     st.markdown(intro_content[language])
+
 st.markdown(instruction_labels[language])
+
 with st.expander(f"**{labels['parameter_selection'][language]}**", expanded=False):
     col1, col2 = st.columns(2)
     with col1:
@@ -1062,35 +941,21 @@ with st.expander(f"**{labels['parameter_selection'][language]}**", expanded=Fals
         if not selected_cantons and not selected_cities:
             available_feature_types = survey_data["feature_type"].unique()
 
-        # Define the feature types and their translations
         feature_type_translations = {
             "lake": {"English": "Lake", "French": "Lac", "German": "See"},
             "river": {"English": "River", "French": "Rivière", "German": "Fluss"},
             "both": {"English": "Both", "French": "Les deux", "German": "Beide"}
         }
 
-        # User's language selection
-        # language = "French"  # This would be dynamically set based on user preference
-
-        # Define the available feature types
-        # available_feature_types = ["lake", "river"]  # Example available types
         feature_type_mapping = {"l": "lake", "r": "river"}
         available_feature_types_labels = [feature_type_mapping[ft] for ft in available_feature_types if
                                           ft in feature_type_mapping]
         if len(available_feature_types_labels) > 1:
             available_feature_types_labels.append("both")
 
-        # Include 'both' option if multiple feature types are available
-        # if len(available_feature_types) > 1:
-        #     available_feature_types.append("both")
-
-
-        # Function to format the display of radio options
         def format_option(option):
             return feature_type_translations[option][language]
 
-
-        # Display the radio button with translated options
         feature_type = st.radio(
             label="Select feature type",
             options=available_feature_types_labels if available_feature_types_labels else ["both"],
@@ -1099,20 +964,6 @@ with st.expander(f"**{labels['parameter_selection'][language]}**", expanded=Fals
             index=0,
             key="feature_type"
         )
-
-        # feature_type_mapping = {"l": "lake", "r": "river"}
-        # available_feature_types_labels = [feature_type_mapping[ft] for ft in available_feature_types if
-        #                                   ft in feature_type_mapping]
-        # if len(available_feature_types_labels) > 1:
-        #     available_feature_types_labels.append("both")
-        #
-        # feature_type = st.radio(
-        #     label=labels["feature_type"][language],
-        #     options=available_feature_types_labels if available_feature_types_labels else ["both"],
-        #     horizontal=True,
-        #     index=0,
-        #     key="feature_type"
-        # )
 
         st.write(f'**{labels["step_2_subheader"][language]}**')
 
@@ -1148,8 +999,7 @@ with st.expander(f"**{labels['parameter_selection'][language]}**", expanded=Fals
         language_column_map = {"English": "en", "French": "fr", "German": "de"}
         description_column = language_column_map[st.session_state["language"]]
 
-        filtered_data = st.session_state["filtered_data"]
-        available_objects = filtered_data["code"].unique()
+        available_objects = st.session_state["filtered_data"]["code"].unique()
 
         object_descriptions = {row["code"]: row[description_column] for _, row in load_codes().iterrows() if
                                row["code"] in available_objects}
@@ -1208,12 +1058,16 @@ with tab1:
                 feature_type = "river"
 
             abstract_message = [
-                SystemMessage(abstract_prompt(st.session_state['language'], feature_type, objects, cantons)),
+                SystemMessage(prompts.abstract_prompt(st.session_state['language'], feature_type, objects, cantons)),
                 HumanMessage(content=st.session_state['rough_drafts'])
             ]
-            an_absract = current_llm.invoke(abstract_message)
-            st.session_state['abstract'] = an_absract.content
-            st.markdown(st.session_state['abstract'])
+
+
+            an_absract = current_llm.stream(abstract_message)
+            abstract = st.write_stream(an_absract)
+            # print(abstract)
+            # g=AIMessage(content=abstract)
+            st.session_state['abstract'] = abstract
         else:
             st.markdown(st.session_state['abstract'])
 
@@ -1238,29 +1092,44 @@ with tab1:
             chart_data = st.session_state.get("filtered_data", pd.DataFrame())
     else:
         st.warning("No rough-draft created")
-        current_llm = use_model(**model_args_no_streaming)
+        # current_llm = use_model(**model_args_no_streaming)
         chart_data = pd.DataFrame()
 
 with tab2:
     if not chart_data.empty:
-        current_llm = use_model(**model_args_no_streaming)
-        scatter_color_by = st.selectbox("Color By", ["canton", "city", "feature_name"], key="scatter_color_by")
+        current_llm = use_model(**model_args_streaming)
+
+        scatter_color_by = st.selectbox(
+            "Color By", ["canton", "city", "feature_name"], key="scatter_color_by"
+        )
+
         scatter_fig = scatterplot(chart_data, st.session_state['language'], labels, scatter_color_by)
         st.plotly_chart(scatter_fig, use_container_width=True, config=config)
 
-        if "scatterplot_previous_color_by" not in st.session_state or st.session_state["scatterplot_previous_color_by"] != scatter_color_by :
+        # Initialize session state variables if not already set
+        if "scatterplot_previous_color_by" not in st.session_state:
+            st.session_state["scatterplot_previous_color_by"] = None
+        if "scatterplot_caption" not in st.session_state:
+            st.session_state["scatterplot_caption"] = None
+
+        # Reset caption if color-by selection changes
+        if st.session_state["scatterplot_previous_color_by"] != scatter_color_by:
             st.session_state["scatterplot_caption"] = None
             st.session_state["scatterplot_previous_color_by"] = scatter_color_by
 
-        if st.button("Explain Chart", key="scatterplot_caption_button"):
-            l = st.session_state['language']
-            explanation = scatterplot_caption(chart_data, scatter_color_by, l, current_llm)
-            st.session_state["scatterplot_caption"] = explanation
-
-        if st.session_state.get("scatterplot_caption"):
+        # Display existing caption or handle button click
+        if st.session_state["scatterplot_caption"] is not None:
             st.write(st.session_state["scatterplot_caption"])
+        else:
+            if st.button("Explain Chart", key="scatterplot_caption_button"):
+                l = st.session_state['language']
+                explanation = scatterplot_caption(chart_data, scatter_color_by, l, current_llm)
+                scatter_plot_caption = st.write_stream(explanation)
+
+                # Store the generated caption in session state
+                st.session_state["scatterplot_caption"] = scatter_plot_caption
     else:
-        st.warning("No data available. Please apply filters.")
+       st.warning("No data available. Please apply filters.")
 
 with tab3:
     if not chart_data.empty:
@@ -1280,16 +1149,15 @@ with tab3:
             st.session_state["barchart_caption"] = None
             st.session_state["barchart_previous_y"] = y_axis
 
-        if st.button("Explain Chart", key="barchart_explain_button"):
-            l = st.session_state['language']
-            explanation = barchart_caption(chart_data,x_axis, y_axis, l, current_llm)
-            st.session_state["barchart_caption"] = explanation
-        if st.session_state.get("barchart_caption"):
+        if st.session_state["barchart_caption"] is not None:
             st.write(st.session_state["barchart_caption"])
-
         else:
-            st.warning("No data available. Please apply filters.")
+            if st.button("Explain Chart", key="barchart_caption_button"):
+                l = st.session_state['language']
+                explanation = barchart_caption(chart_data,x_axis, y_axis, l, current_llm)
+                bar_chart_caption = st.write_stream(explanation)
 
+                st.session_state["barchart_caption"] = bar_chart_caption
     else:
         st.warning("No data available. Please apply filters.")
 
@@ -1319,6 +1187,7 @@ if 'language' not in st.session_state:
     st.subheader("Discussion")
 else:
     st.subheader(labels["discussion"][st.session_state['language']])
+
 if "final_selected_parameters" in st.session_state:
 
     if st.session_state["barchart_caption"] is not None and st.session_state["scatterplot_caption"] is not None:
@@ -1326,7 +1195,7 @@ if "final_selected_parameters" in st.session_state:
             st.session_state.messages = []
         chat_llm = ChatOpenAI(**model_args_streaming)
         print(st.session_state.keys())
-        the_report_prompt = reporter_prompt(
+        the_report_prompt = prompts.reporter_prompt(
             st.session_state['abstract'],
             st.session_state["scatterplot_caption"],
             st.session_state["barchart_caption"],
@@ -1343,13 +1212,31 @@ if "final_selected_parameters" in st.session_state:
         )
 
         the_report_agent = a_report_prompt | chat_llm
-
+        agent_intro = {
+            "English": " ".join([
+                "Hi, I am the report assistant.",
+                "The rough draft, inventory and the text from the selected charts are loaded and available to me.",
+                "This is only a demonstration, we did not hook up the RAG agent but you can consult the references here:",
+                "https://hammerdirt-analyst.github.io/feb_2024/references.html."
+            ]),
+            "French": " ".join([
+                "Bonjour, je suis l'assistant de rapport.",
+                "L'ébauche, l'inventaire et le texte des graphiques sélectionnés sont chargés et à ma disposition.",
+                "Ceci est seulement une démonstration, nous n'avons pas connecté l'agent RAG mais vous pouvez consulter les références ici :",
+                "https://hammerdirt-analyst.github.io/feb_2024/references.html."
+            ]),
+            "German": " ".join([
+                "Hallo, ich bin der Berichtsassistent.",
+                "Der Entwurf, das Inventar und der Text aus den ausgewählten Diagrammen sind geladen und stehen mir zur Verfügung.",
+                "Dies ist nur eine Demonstration, wir haben den RAG-Agenten nicht angeschlossen, aber Sie können die Referenzen hier einsehen:",
+                "https://hammerdirt-analyst.github.io/feb_2024/references.html."
+            ])
+        }
         # session state
         if "chat_history" not in st.session_state:
             st.session_state.chat_history = [
-                AIMessage(content="Hello, I am a report assistant how can i help you?"),
+                AIMessage(content=agent_intro[st.session_state["language"]]),
             ]
-
         # conversation
         for message in st.session_state.chat_history:
             if isinstance(message, AIMessage):
@@ -1371,8 +1258,6 @@ if "final_selected_parameters" in st.session_state:
             with st.chat_message("AI"):
                 query = [HumanMessage(content=user_query)]
                 response = the_report_agent.stream(query)
-                # print(response)
-                # st.session_state.chat_history.append(AIMessage(content=response))
                 r = st.write_stream(response)
 
             st.session_state.chat_history.append(AIMessage(content=r))

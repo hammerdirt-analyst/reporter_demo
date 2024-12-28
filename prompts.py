@@ -147,75 +147,134 @@ intro_two = {
     "German": """
     Die Inspiration dafür sind die Millionen von Menschen weltweit, die jedes Jahr Zeit investieren, um die Daten zu sammeln.
     """}
-
 intro_content = {
     "English": """
-    **Welcome to the Swiss Litter Monitoring App!**
+### Welcome to the Swiss Report Assistant!
 
-    This app is designed to help stakeholders understand and analyze the types and quantities of litter found along rivers and lakes across Switzerland. By leveraging volunteer-collected data and established guidelines for monitoring marine litter in European seas, the app provides an insightful and comprehensive tool for tackling solid waste issues in these environments.
+This assistant is designed to help stakeholders generate customized reports tailored to their specific needs—whether for a community, lake, or canton. By leveraging advanced language models (LLMs), it enables you to explore, filter, and analyze data interactively. Stakeholders can ask questions and receive clear, contextual explanations of the output, empowering them to make informed decisions.
 
-    **Key Features:**
-    - Comprehensive Data Access: Explore all monitoring data collected since 2015.
-    - Insights and Reporting: Prepare detailed reports and consolidate volunteer observations.
-    - Community Collaboration: Benefit from the work of dedicated volunteers.
+As a supplement to the 2022 Swiss Federal Report on Trash Density [IQAASL](link to federal report), this assistant bridges the gap between static publications and dynamic, query-driven analysis. It offers the flexibility and depth needed to address questions and insights that couldn’t be covered in traditional reports.
 
-    **Based on Proven Research:**  
-    This app is built on methodologies and insights from the following works:
-    - [IQAASL End of Sampling 2021](https://hammerdirt-analyst.github.io/IQAASL-End-0f-Sampling-2021/)  
-    - [Solid Waste Team](https://hammerdirt-analyst.github.io/solid-waste-team/titlepage.html)  
-    - [Land Use](https://hammerdirt-analyst.github.io/landuse/titlepage.html)  
-    - [Plastock](https://associationsauvegardeleman.github.io/plastock/)  
-    - [Finding One Object](https://hammerdirt-analyst.github.io/finding-one-object/titlepage.html)  
+**Based on field experience**  
+This app is built on methodologies and insights from the following works:
+- [IQAASL End of Sampling 2021](https://hammerdirt-analyst.github.io/IQAASL-End-0f-Sampling-2021/)  
+- [Solid Waste Team](https://hammerdirt-analyst.github.io/solid-waste-team/titlepage.html)  
+- [Land Use](https://hammerdirt-analyst.github.io/landuse/titlepage.html)  
+- [Plastock](https://associationsauvegardeleman.github.io/plastock/)  
+- [Finding One Object](https://hammerdirt-analyst.github.io/finding-one-object/titlepage.html)  
 
-    **Open Source and Transparent:**  
-    The app's source code, data, and documentation are available for review and collaboration:
-    [Explore the documentation and source code here](https://hammerdirt-analyst.github.io/feb_2024/titlepage.html#).
-    """,
+**Open Source and Transparent**  
+The app's source code, data, and documentation are available for review and collaboration:  
+[Explore the documentation and source code here](https://hammerdirt-analyst.github.io/feb_2024/titlepage.html#).
+""",
     "French": """
-    **Bienvenue dans l'application Swiss Litter Monitoring!**
+### Bienvenue à l'Assistant de Rapport Suisse!
 
-    Cette application est conçue pour aider les parties prenantes à comprendre et analyser les types et quantités de déchets trouvés le long des rivières et des lacs en Suisse. En s'appuyant sur des données collectées par des volontaires et des lignes directrices établies pour surveiller les déchets marins dans les mers européennes, l'application fournit un outil précieux et complet pour faire face aux problèmes de déchets solides dans ces environnements.
+Cet assistant est conçu pour aider les parties prenantes à générer des rapports personnalisés adaptés à leurs besoins spécifiques—qu'il s'agisse d'une communauté, d'un lac ou d'un canton. En exploitant des modèles de langage avancés (LLMs), il permet d'explorer, de filtrer et d'analyser les données de manière interactive. Les utilisateurs peuvent poser des questions et recevoir des explications contextuelles claires sur les résultats, leur permettant de prendre des décisions éclairées.
 
-    **Principales caractéristiques :**
-    - Accès complet aux données : Explorez toutes les données collectées depuis 2015.
-    - Informations et rapports : Préparez des rapports détaillés et consolidez les observations des volontaires.
-    - Collaboration communautaire : Profitez du travail de bénévoles dévoués.
+En complément du Rapport fédéral suisse 2022 sur la densité des déchets [IQAASL](link to federal report), cet assistant comble le fossé entre les publications statiques et les analyses dynamiques basées sur des requêtes. Il offre la flexibilité et la profondeur nécessaires pour aborder des questions et des idées qui ne pouvaient être couvertes dans les rapports traditionnels.
 
-    **Basé sur des recherches éprouvées :**  
-    Cette application repose sur des méthodologies et des informations provenant des travaux suivants :
-    - [IQAASL End of Sampling 2021](https://hammerdirt-analyst.github.io/IQAASL-End-0f-Sampling-2021/)  
-    - [Solid Waste Team](https://hammerdirt-analyst.github.io/solid-waste-team/titlepage.html)  
-    - [Land Use](https://hammerdirt-analyst.github.io/landuse/titlepage.html)  
-    - [Plastock](https://associationsauvegardeleman.github.io/plastock/)  
-    - [Finding One Object](https://hammerdirt-analyst.github.io/finding-one-object/titlepage.html)  
+**Basé sur l'expérience de terrain**  
+Cette application est basée sur des méthodologies et des idées issues des travaux suivants :  
+- [IQAASL End of Sampling 2021](https://hammerdirt-analyst.github.io/IQAASL-End-0f-Sampling-2021/)  
+- [Solid Waste Team](https://hammerdirt-analyst.github.io/solid-waste-team/titlepage.html)  
+- [Land Use](https://hammerdirt-analyst.github.io/landuse/titlepage.html)  
+- [Plastock](https://associationsauvegardeleman.github.io/plastock/)  
+- [Finding One Object](https://hammerdirt-analyst.github.io/finding-one-object/titlepage.html)  
 
-    **Source ouverte et transparente :**  
-    Le code source, les données et la documentation de l'application sont disponibles pour consultation et collaboration :
-    [Explorez la documentation et le code source ici](https://hammerdirt-analyst.github.io/feb_2024/titlepage.html#).
-    """,
+**Source ouverte et transparente**  
+Le code source, les données et la documentation de l'application sont disponibles pour examen et collaboration :  
+[Explorez la documentation et le code source ici](https://hammerdirt-analyst.github.io/feb_2024/titlepage.html#).
+""",
     "German": """
-    **Willkommen in der Swiss Litter Monitoring App!**
+### Willkommen beim Schweizer Berichtsassistenten!
 
-    Diese App soll Interessengruppen dabei helfen, die Arten und Mengen von Abfall zu verstehen und zu analysieren, die entlang von Flüssen und Seen in der Schweiz gefunden werden. Durch die Nutzung von von Freiwilligen gesammelten Daten und etablierten Richtlinien zur Überwachung von Meeresmüll in europäischen Gewässern bietet die App ein wertvolles und umfassendes Werkzeug zur Bewältigung von Problemen mit festen Abfällen in diesen Umgebungen.
+Dieser Assistent wurde entwickelt, um Stakeholder dabei zu unterstützen, maßgeschneiderte Berichte zu erstellen, die auf ihre spezifischen Bedürfnisse zugeschnitten sind—sei es für eine Gemeinde, einen See oder einen Kanton. Durch den Einsatz fortschrittlicher Sprachmodelle (LLMs) ermöglicht er es, Daten interaktiv zu erkunden, zu filtern und zu analysieren. Stakeholder können Fragen stellen und klare, kontextbezogene Erklärungen zu den Ergebnissen erhalten, um fundierte Entscheidungen zu treffen.
 
-    **Hauptmerkmale:**
-    - Umfassender Datenzugriff: Erkunden Sie alle seit 2015 gesammelten Überwachungsdaten.
-    - Einblicke und Berichte: Erstellen Sie detaillierte Berichte und konsolidieren Sie Beobachtungen von Freiwilligen.
-    - Gemeinschaftliche Zusammenarbeit: Profitieren Sie von der Arbeit engagierter Freiwilliger.
+Als Ergänzung zum Schweizerischen Bundesbericht 2022 über die Abfalldichte [IQAASL](link to federal report) überbrückt dieser Assistent die Lücke zwischen statischen Veröffentlichungen und dynamischen, abfragegesteuerten Analysen. Er bietet die Flexibilität und Tiefe, die erforderlich sind, um Fragen und Erkenntnisse zu bearbeiten, die in traditionellen Berichten nicht behandelt werden konnten.
 
-    **Basierend auf bewährter Forschung:**  
-    Diese App basiert auf Methoden und Erkenntnissen aus den folgenden Arbeiten:
-    - [IQAASL End of Sampling 2021](https://hammerdirt-analyst.github.io/IQAASL-End-0f-Sampling-2021/)  
-    - [Solid Waste Team](https://hammerdirt-analyst.github.io/solid-waste-team/titlepage.html)  
-    - [Land Use](https://hammerdirt-analyst.github.io/landuse/titlepage.html)  
-    - [Plastock](https://associationsauvegardeleman.github.io/plastock/)  
-    - [Finding One Object](https://hammerdirt-analyst.github.io/finding-one-object/titlepage.html)  
+**Basierend auf Felderfahrungen**  
+Diese App basiert auf Methoden und Erkenntnissen aus den folgenden Arbeiten:  
+- [IQAASL End of Sampling 2021](https://hammerdirt-analyst.github.io/IQAASL-End-0f-Sampling-2021/)  
+- [Solid Waste Team](https://hammerdirt-analyst.github.io/solid-waste-team/titlepage.html)  
+- [Land Use](https://hammerdirt-analyst.github.io/landuse/titlepage.html)  
+- [Plastock](https://associationsauvegardeleman.github.io/plastock/)  
+- [Finding One Object](https://hammerdirt-analyst.github.io/finding-one-object/titlepage.html)  
 
-    **Offen und transparent:**  
-    Der Quellcode, die Daten und die Dokumentation der App sind zur Überprüfung und Zusammenarbeit verfügbar:
-    [Entdecken Sie hier die Dokumentation und den Quellcode](https://hammerdirt-analyst.github.io/feb_2024/titlepage.html#).
-    """
+**Offen und Transparent**  
+Der Quellcode, die Daten und die Dokumentation der App sind zur Überprüfung und Zusammenarbeit verfügbar:  
+[Entdecken Sie hier die Dokumentation und den Quellcode](https://hammerdirt-analyst.github.io/feb_2024/titlepage.html#).
+"""
 }
+
+# intro_content = {
+#     "English": """
+#     **Welcome to the Swiss Litter Monitoring App!**
+#
+#     This app is designed to help stakeholders understand and analyze the types and quantities of litter found along rivers and lakes across Switzerland. By leveraging volunteer-collected data and established guidelines for monitoring marine litter in European seas, the app provides an insightful and comprehensive tool for tackling solid waste issues in these environments.
+#
+#     **Key Features:**
+#     - Comprehensive Data Access: Explore all monitoring data collected since 2015.
+#     - Insights and Reporting: Prepare detailed reports and consolidate volunteer observations.
+#     - Community Collaboration: Benefit from the work of dedicated volunteers.
+#
+#     **Based on Proven Research:**
+#     This app is built on methodologies and insights from the following works:
+#     - [IQAASL End of Sampling 2021](https://hammerdirt-analyst.github.io/IQAASL-End-0f-Sampling-2021/)
+#     - [Solid Waste Team](https://hammerdirt-analyst.github.io/solid-waste-team/titlepage.html)
+#     - [Land Use](https://hammerdirt-analyst.github.io/landuse/titlepage.html)
+#     - [Plastock](https://associationsauvegardeleman.github.io/plastock/)
+#     - [Finding One Object](https://hammerdirt-analyst.github.io/finding-one-object/titlepage.html)
+#
+#     **Open Source and Transparent:**
+#     The app's source code, data, and documentation are available for review and collaboration:
+#     [Explore the documentation and source code here](https://hammerdirt-analyst.github.io/feb_2024/titlepage.html#).
+#     """,
+#     "French": """
+#     **Bienvenue dans l'application Swiss Litter Monitoring!**
+#
+#     Cette application est conçue pour aider les parties prenantes à comprendre et analyser les types et quantités de déchets trouvés le long des rivières et des lacs en Suisse. En s'appuyant sur des données collectées par des volontaires et des lignes directrices établies pour surveiller les déchets marins dans les mers européennes, l'application fournit un outil précieux et complet pour faire face aux problèmes de déchets solides dans ces environnements.
+#
+#     **Principales caractéristiques :**
+#     - Accès complet aux données : Explorez toutes les données collectées depuis 2015.
+#     - Informations et rapports : Préparez des rapports détaillés et consolidez les observations des volontaires.
+#     - Collaboration communautaire : Profitez du travail de bénévoles dévoués.
+#
+#     **Basé sur des recherches éprouvées :**
+#     Cette application repose sur des méthodologies et des informations provenant des travaux suivants :
+#     - [IQAASL End of Sampling 2021](https://hammerdirt-analyst.github.io/IQAASL-End-0f-Sampling-2021/)
+#     - [Solid Waste Team](https://hammerdirt-analyst.github.io/solid-waste-team/titlepage.html)
+#     - [Land Use](https://hammerdirt-analyst.github.io/landuse/titlepage.html)
+#     - [Plastock](https://associationsauvegardeleman.github.io/plastock/)
+#     - [Finding One Object](https://hammerdirt-analyst.github.io/finding-one-object/titlepage.html)
+#
+#     **Source ouverte et transparente :**
+#     Le code source, les données et la documentation de l'application sont disponibles pour consultation et collaboration :
+#     [Explorez la documentation et le code source ici](https://hammerdirt-analyst.github.io/feb_2024/titlepage.html#).
+#     """,
+#     "German": """
+#     **Willkommen in der Swiss Litter Monitoring App!**
+#
+#     Diese App soll Interessengruppen dabei helfen, die Arten und Mengen von Abfall zu verstehen und zu analysieren, die entlang von Flüssen und Seen in der Schweiz gefunden werden. Durch die Nutzung von von Freiwilligen gesammelten Daten und etablierten Richtlinien zur Überwachung von Meeresmüll in europäischen Gewässern bietet die App ein wertvolles und umfassendes Werkzeug zur Bewältigung von Problemen mit festen Abfällen in diesen Umgebungen.
+#
+#     **Hauptmerkmale:**
+#     - Umfassender Datenzugriff: Erkunden Sie alle seit 2015 gesammelten Überwachungsdaten.
+#     - Einblicke und Berichte: Erstellen Sie detaillierte Berichte und konsolidieren Sie Beobachtungen von Freiwilligen.
+#     - Gemeinschaftliche Zusammenarbeit: Profitieren Sie von der Arbeit engagierter Freiwilliger.
+#
+#     **Basierend auf bewährter Forschung:**
+#     Diese App basiert auf Methoden und Erkenntnissen aus den folgenden Arbeiten:
+#     - [IQAASL End of Sampling 2021](https://hammerdirt-analyst.github.io/IQAASL-End-0f-Sampling-2021/)
+#     - [Solid Waste Team](https://hammerdirt-analyst.github.io/solid-waste-team/titlepage.html)
+#     - [Land Use](https://hammerdirt-analyst.github.io/landuse/titlepage.html)
+#     - [Plastock](https://associationsauvegardeleman.github.io/plastock/)
+#     - [Finding One Object](https://hammerdirt-analyst.github.io/finding-one-object/titlepage.html)
+#
+#     **Offen und transparent:**
+#     Der Quellcode, die Daten und die Dokumentation der App sind zur Überprüfung und Zusammenarbeit verfügbar:
+#     [Entdecken Sie hier die Dokumentation und den Quellcode](https://hammerdirt-analyst.github.io/feb_2024/titlepage.html#).
+#     """
+# }
 
 English_instructions = (
     "Make a summary of data and select chart contents.\n\n"

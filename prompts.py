@@ -99,12 +99,12 @@ def reporter_prompt(summary, scatterplot, barchart, inventory, rough_draft):
     aprompt = (
                 "You are helping a data scientist write a summary report of volunteer observations of objects found along",
                 " lakes and rivers in Switzerland. The data is collected using the JRC/EU method counting beach litter. This",
-                " method is defined in the _Guide for monitoring marine litter in european seas. Your other reference document",
+                " method is defined in the _Guide for monitoring marine litter in european seas_. Your other reference document",
                 " is the federal report on litter density of swiss lakes (IQAASL) published in 2021 and available here:\n\n",
                 "[IQAASL End of Sampling 2021](https://hammerdirt-analyst.github.io/IQAASL-End-0f-Sampling-2021/)\n\n",
                 "The client has already prepared a rough draft of the report as well as a bar chart, scatter plot and map.",
                 " Your task is to answer the clients questions reference these reports. The client is preparing a decision",
-                " support document and is relying on your for brief answers that can be supported by the documents provided",
+                " support document and is relying on you for brief answers that can be supported by the documents provided",
                 " below or the previously mentioned references. The client has provided the following documents:\n\n",
                 f"summary: {summary}\n\n",
                 f"scatterplot: {scatterplot}\n\n",
@@ -115,9 +115,424 @@ def reporter_prompt(summary, scatterplot, barchart, inventory, rough_draft):
                 "The column names and descriptions for inventory items:\n1. object: the use or plain language description"
                 "\n2. code: the MLW code for the item\n3. quantity: the total number of items found\n4. pcs/m: the average number"
                 " of items per meter of shoreline.\n5 % of total: the proportion of the current set of data.\n6. number of samples:"
-                " the number of samples collected\n7. fail rate: the proportion of samples that contained the objects\n\n",
+                " the number of samples collected\n7. fail rate: the proportion of samples that contained at least one of the objects\n\n",
                 "You are to discuss plastics, trash or litter in the environment, citizen-science, swiss or european policy",
                 " concerning plastics and trash in the environment, probability and statistics, calculus, bayes theorem, bayesian statistics",
                 " other topics of a sensitive or sexual nature are not to be considered.",
             )
     return ''.join(aprompt)
+
+
+# labels
+
+intro_one = {
+    "English": """
+    This is an application of large language models (LLMs) and machine learning to provide summary reports of volunteer observations of marine litter using the OSPAR, JRC, or NOAA methods for counting beach litter.
+    """,
+    "French": """
+    Ceci est une application de modèles de langage avancés (LLMs) et d'apprentissage automatique pour fournir des rapports résumés des observations bénévoles des déchets marins en utilisant les méthodes OSPAR, JRC ou NOAA pour le comptage des déchets sur les plages.
+    """,
+    "German": """
+    Dies ist eine Anwendung großer Sprachmodelle (LLMs) und maschinellen Lernens, um zusammenfassende Berichte über die Beobachtungen von Freiwilligen zu Meeresmüll zu erstellen, basierend auf den OSPAR-, JRC- oder NOAA-Methoden zur Erfassung von Strandmüll.
+    """
+}
+
+intro_two = {
+    "English": """
+    The inspiration for this is the millions of people each year throughout the world who spend the time to collect the data.
+    """,
+    "French": """
+    L'inspiration pour cela vient des millions de personnes à travers le monde qui, chaque année, prennent le temps de collecter les données.
+    """,
+    "German": """
+    Die Inspiration dafür sind die Millionen von Menschen weltweit, die jedes Jahr Zeit investieren, um die Daten zu sammeln.
+    """}
+
+intro_content = {
+    "English": """
+    **Welcome to the Swiss Litter Monitoring App!**
+
+    This app is designed to help stakeholders understand and analyze the types and quantities of litter found along rivers and lakes across Switzerland. By leveraging volunteer-collected data and established guidelines for monitoring marine litter in European seas, the app provides an insightful and comprehensive tool for tackling solid waste issues in these environments.
+
+    **Key Features:**
+    - Comprehensive Data Access: Explore all monitoring data collected since 2015.
+    - Insights and Reporting: Prepare detailed reports and consolidate volunteer observations.
+    - Community Collaboration: Benefit from the work of dedicated volunteers.
+
+    **Based on Proven Research:**  
+    This app is built on methodologies and insights from the following works:
+    - [IQAASL End of Sampling 2021](https://hammerdirt-analyst.github.io/IQAASL-End-0f-Sampling-2021/)  
+    - [Solid Waste Team](https://hammerdirt-analyst.github.io/solid-waste-team/titlepage.html)  
+    - [Land Use](https://hammerdirt-analyst.github.io/landuse/titlepage.html)  
+    - [Plastock](https://associationsauvegardeleman.github.io/plastock/)  
+    - [Finding One Object](https://hammerdirt-analyst.github.io/finding-one-object/titlepage.html)  
+
+    **Open Source and Transparent:**  
+    The app's source code, data, and documentation are available for review and collaboration:
+    [Explore the documentation and source code here](https://hammerdirt-analyst.github.io/feb_2024/titlepage.html#).
+    """,
+    "French": """
+    **Bienvenue dans l'application Swiss Litter Monitoring!**
+
+    Cette application est conçue pour aider les parties prenantes à comprendre et analyser les types et quantités de déchets trouvés le long des rivières et des lacs en Suisse. En s'appuyant sur des données collectées par des volontaires et des lignes directrices établies pour surveiller les déchets marins dans les mers européennes, l'application fournit un outil précieux et complet pour faire face aux problèmes de déchets solides dans ces environnements.
+
+    **Principales caractéristiques :**
+    - Accès complet aux données : Explorez toutes les données collectées depuis 2015.
+    - Informations et rapports : Préparez des rapports détaillés et consolidez les observations des volontaires.
+    - Collaboration communautaire : Profitez du travail de bénévoles dévoués.
+
+    **Basé sur des recherches éprouvées :**  
+    Cette application repose sur des méthodologies et des informations provenant des travaux suivants :
+    - [IQAASL End of Sampling 2021](https://hammerdirt-analyst.github.io/IQAASL-End-0f-Sampling-2021/)  
+    - [Solid Waste Team](https://hammerdirt-analyst.github.io/solid-waste-team/titlepage.html)  
+    - [Land Use](https://hammerdirt-analyst.github.io/landuse/titlepage.html)  
+    - [Plastock](https://associationsauvegardeleman.github.io/plastock/)  
+    - [Finding One Object](https://hammerdirt-analyst.github.io/finding-one-object/titlepage.html)  
+
+    **Source ouverte et transparente :**  
+    Le code source, les données et la documentation de l'application sont disponibles pour consultation et collaboration :
+    [Explorez la documentation et le code source ici](https://hammerdirt-analyst.github.io/feb_2024/titlepage.html#).
+    """,
+    "German": """
+    **Willkommen in der Swiss Litter Monitoring App!**
+
+    Diese App soll Interessengruppen dabei helfen, die Arten und Mengen von Abfall zu verstehen und zu analysieren, die entlang von Flüssen und Seen in der Schweiz gefunden werden. Durch die Nutzung von von Freiwilligen gesammelten Daten und etablierten Richtlinien zur Überwachung von Meeresmüll in europäischen Gewässern bietet die App ein wertvolles und umfassendes Werkzeug zur Bewältigung von Problemen mit festen Abfällen in diesen Umgebungen.
+
+    **Hauptmerkmale:**
+    - Umfassender Datenzugriff: Erkunden Sie alle seit 2015 gesammelten Überwachungsdaten.
+    - Einblicke und Berichte: Erstellen Sie detaillierte Berichte und konsolidieren Sie Beobachtungen von Freiwilligen.
+    - Gemeinschaftliche Zusammenarbeit: Profitieren Sie von der Arbeit engagierter Freiwilliger.
+
+    **Basierend auf bewährter Forschung:**  
+    Diese App basiert auf Methoden und Erkenntnissen aus den folgenden Arbeiten:
+    - [IQAASL End of Sampling 2021](https://hammerdirt-analyst.github.io/IQAASL-End-0f-Sampling-2021/)  
+    - [Solid Waste Team](https://hammerdirt-analyst.github.io/solid-waste-team/titlepage.html)  
+    - [Land Use](https://hammerdirt-analyst.github.io/landuse/titlepage.html)  
+    - [Plastock](https://associationsauvegardeleman.github.io/plastock/)  
+    - [Finding One Object](https://hammerdirt-analyst.github.io/finding-one-object/titlepage.html)  
+
+    **Offen und transparent:**  
+    Der Quellcode, die Daten und die Dokumentation der App sind zur Überprüfung und Zusammenarbeit verfügbar:
+    [Entdecken Sie hier die Dokumentation und den Quellcode](https://hammerdirt-analyst.github.io/feb_2024/titlepage.html#).
+    """
+}
+
+English_instructions = (
+    "Make a summary of data and select chart contents.\n\n"
+    "1. Select a canton, city, lake or river.\n"
+    "2. Select your date range.\n"
+    "3. Select the objects of interest.\n"
+    "4. Apply filters.\n"
+    "5. Make rough drafts.\n"
+    "6. Define chart contents and create summary of chart.\n"
+    "7. Chat with data.\n\n"
+)
+
+French_instructions = (
+    "Faites un résumé des données et sélectionnez le contenu du graphique.\n\n"
+    "1. Sélectionnez un canton, une ville, un lac ou une rivière.\n"
+    "2. Sélectionnez votre plage de dates.\n"
+    "3. Sélectionnez les objets d'intérêt.\n"
+    "4. Appliquez des filtres.\n"
+    "5. Faites des brouillons.\n"
+    "6. Définissez le contenu du graphique et créez un résumé du graphique.\n"
+    "7. Discutez avec les données.\n\n"
+)
+
+German_instructions = (
+    "Erstellen Sie eine Datenzusammenfassung und wählen Sie die Diagramminhalte aus.\n\n"
+    "1. Wählen Sie einen Kanton, eine Stadt, einen See oder einen Fluss aus.\n"
+    "2. Wählen Sie Ihren Datumsbereich aus.\n"
+    "3. Wählen Sie die interessierenden Objekte aus.\n"
+    "4. Wenden Sie Filter an.\n"
+    "5. Erstellen Sie grobe Entwürfe.\n"
+    "6. Definieren Sie die Diagramminhalte und erstellen Sie eine Zusammenfassung des Diagramms.\n"
+    "7. Chatten Sie mit den Daten.\n\n"
+)
+
+
+
+engish_filtertwo = ('Confirm your selections before making a rough draft.\n'
+                    'You can adjust your selections by clicking the "clear filters" button below.\n'
+                    'if you selected no objects the report will be for all objects found in the selected region and date range.\n'
+                    'in this case the list of selected codes will not appear in the display below.'
+                    )
+french_filtertwo = ('Confirmez vos sélections avant de rédiger un brouillon.\n'
+                    'Vous pouvez ajuster vos sélections en cliquant sur le bouton "effacer les filtres" ci-dessous.\n'
+                    'Si vous n\'avez sélectionné aucun objet, le rapport portera sur tous les objets trouvés dans la région et la plage de dates sélectionnées.\n'
+                    'dans ce cas, la liste des codes sélectionnés n\'apparaîtra pas dans l\'affichage ci-dessous.'
+                    )
+german_filtertwo = ('Bestätigen Sie Ihre Auswahl, bevor Sie einen Entwurf erstellen.\n'
+                    'Sie können Ihre Auswahl anpassen, indem Sie unten auf die Schaltfläche "Filter löschen" klicken.\n'
+                    'Wenn Sie keine Objekte ausgewählt haben, bezieht sich der Bericht auf alle in der ausgewählten Region und im ausgewählten Datumsbereich gefundenen Objekte.\n'
+                    'In diesem Fall wird die Liste der ausgewählten Codes nicht im folgenden Display angezeigt.'
+                    )
+
+
+
+
+french_filterone = 'Appliquez les filtres de localisation, puis vous pouvez sélectionner un ou plusieurs objets. Si vous ne sélectionnez aucun objet, le rapport inclura tous les objets trouvés dans la plage de dates et les filtres géographiques.'
+german_filterone = 'Wenden Sie die Standortfilter an, dann können Sie ein oder mehrere Objekte auswählen. Wenn Sie keine Objekte auswählen, enthält der Bericht alle Objekte, die im Datumsbereich und innerhalb der geografischen Filter gefunden wurden.'
+english_filterone = 'Apply the location filters, then you can select one object or multiple objects. If you select none of the objects, the report will include all objects found within the date range and geographic filters.'
+
+
+
+labels = {
+    "language": {
+        "English": "Language",
+        "French": "Langue",
+        "German": "Sprache"
+    },
+    "filtering_data": {
+        "English": "Filtering Data",
+        "French": "Filtrage des données",
+        "German": "Daten filtern"
+    },
+    "date_range": {
+        "English": "Date Range",
+        "French": "Plage de dates",
+        "German": "Datumsbereich"
+    },
+    "canton": {
+        "English": "Canton",
+        "French": "Canton",
+        "German": "Kanton"
+    },
+    "city": {
+        "English": "City",
+        "French": "Ville",
+        "German": "Stadt"
+    },
+    "feature_type": {
+        "English": "Feature Type",
+        "French": "Type de caractéristique",
+        "German": "Merkmaltyp"
+    },
+    "clear_filters": {
+        "English": "Clear Filters",
+        "French": "Effacer les filtres",
+        "German": "Filter löschen"
+    },
+    "apply_filters": {
+        "English": "Apply location filters",
+        "French": "Appliquer les filtres de localisation",
+        "German": "Standortfilter anwenden"
+    },
+    "objects": {
+        "English": "Objects of Interest",
+        "French": "Objets d'intérêt",
+        "German": "Interessante Objekte"
+    },
+    "feature_name": {
+        "English": "Feature Name",
+        "French": "Nom du lac/rivière",
+        "German": "Merkmalsname"
+    },
+    "step_1": {
+        "English": "Step 1",
+        "French": "Étape 1",
+        "German": "Schritt 1"
+    },
+    "step_2": {
+        "English": "Step 2",
+        "French": "Étape 2",
+        "German": "Schritt 2"
+    },
+    "step_3": {
+        "English": "Step 3",
+        "French": "Étape 3",
+        "German": "Schritt 3"
+    },
+    "selected_parameters": {
+        "English": "Selected Parameters",
+        "French": "Paramètres sélectionnés",
+        "German": "Ausgewählte Parameter"
+    },
+    "whats_this": {
+        "English": "What's this?",
+        "French": "Qu'est-ce que c'est ?",
+        "German": "Was ist das?"
+    },
+    "parameter_selection": {
+        "English": "Parameter Selection",
+        "French": "Sélection des paramètres",
+        "German": "Parameterauswahl"
+    },
+    "step_1_subheader": {
+        "English": ":orange[Step 1: Select regions or feature of interest]",
+        "French": ":orange[Étape 1 : Sélectionnez les régions ou caractéristiques d'intérêt]",
+        "German": ":orange[Schritt 1 : Wählen Sie Regionen oder interessante Merkmale aus]"
+    },
+    "step_2_subheader": {
+        "English": ":orange[Step 2: Select date range]",
+        "French": ":orange[Étape 2 : Sélectionnez la plage de dates]",
+        "German": ":orange[Schritt 2: Wählen Sie den Datumsbereich aus]"
+    },
+    "step_3_subheader": {
+        "English": ":orange[Step 3: Select objects of interest]",
+        "French": ":orange[Étape 3 : Sélectionnez les objets d'intérêt]",
+        "German": ":orange[Schritt 3: Wählen Sie interessante Objekte aus]"
+    },
+    "step_4_subheader": {
+        "English": ":orange[Step 4: Confirm selections]",
+        "French": ":orange[Étape 4 : Confirmer les sélections]",
+        "German": ":orange[Schritt 4: Auswahl bestätigen]"
+    },
+    "step_5_subheader": {
+        "English": ":orange[Step 5: Make rough draft]",
+        "French": ":orange[Étape 5 : Rédigez un brouillon]",
+        "German": ":orange[Schritt 5: Entwurf erstellen]"
+    },
+    "step_6_subheader": {
+        "English": ":orange[Step 6: Scatterplot parameters]",
+        "French": ":orange[Étape 6 : Nuage de points]",
+        "German": ":orange[Schritt 6: Streuplot-Parameter]"
+    },
+    "step_7_subheader": {
+        "English": ":orange[Step 7: Barchart parameters]",
+        "French": ":orange[Étape 7 : Diagramme en barres]",
+        "German": ":orange[Schritt 7: Balkendiagramm-Parameter]"
+    },
+    "start_date": {
+        "English": "Start Date",
+        "French": "Date de début",
+        "German": "Anfangsdatum"
+    },
+    "end_date": {
+        "English": "End Date",
+        "French": "Date de fin",
+        "German": "Enddatum"
+    },
+    "selected_date_range": {
+        "English": "Selected Date Range",
+        "French": "Plage de dates sélectionnée",
+        "German": "Ausgewählter Datumsbereich"
+    },
+    "selected_parameters_subheader": {
+        "English": "Selected Parameters",
+        "French": "Paramètres sélectionnés",
+        "German": "Ausgewählte Parameter"
+    },
+    "apply_filters_button": {
+        "English": "Apply Filters",
+        "French": "Appliquer les filtres",
+        "German": "Filter anwenden"
+    },
+    "filters_applied_message": {
+        "English": "Filters applied! ",
+        "French": "Filtres appliqués ! ",
+        "German": "Filter angewendet!"
+    },
+    "make_roughdraft": {
+        "English": "Make Roughdraft",
+        "French": "Créer un brouillon",
+        "German": "Entwurf erstellen"
+    },
+    "survey_results": {
+        "English":"Survey results",
+        "French": "Résultats de l'enquête",
+        "German": "Umfrageergebnisse"
+    },
+    "discussion": {
+        "English": "Discussion",
+        "French": "Discussion",
+        "German": "Diskussion"
+    },
+    "shoreline_litter_assessment": {
+        "English": "Shoreline litter assessment",
+        "French": "Évaluation des déchets sur le littoral",
+        "German": "Bewertung des Küstenmülls"
+    },
+    "summary": {
+        "English": "Summary",
+        "French": "Résumé",
+        "German": "Zusammenfassung"
+    },
+    "rough_draft": {
+        "English": "Rough draft",
+        "French": "Brouillon",
+        "German": "Entwurf"
+    },
+    "inventory": {
+        "English": "Inventory",
+        "French": "Inventaire",
+        "German": "Inventar"
+    },
+    "confirmfilters": {
+        "English": "Confirm Filters",
+        "French": "Confirmer les filtres",
+        "German": "Filter bestätigen"
+    },
+    "nofilters": {
+        "English": "You have not selected any filters. This will return all data.",
+        "French": "Vous n'avez sélectionné aucun filtre. Cela renverra toutes les données.",
+        "German": "Sie haben keine Filter ausgewählt. Dies wird alle Daten zurückgeben."
+    },
+    "no_rough_draft_message" :{
+        "English": "No rough-draft created",
+        "French": "Aucun brouillon créé",
+        "German": "Kein Entwurf erstellt"
+    },
+    "no_filter_warning": {
+        "English": "You have not selected any filters. This will return all data.",
+        "French": "Vous n'avez sélectionné aucun filtre. Cela renverra toutes les données.",
+        "German": "Sie haben keine Filter ausgewählt. Dies wird alle Daten zurückgeben."
+    },
+    "please_apply_filters": {
+        "English": "Please apply filters to see available objects.",
+        "French": "Veuillez appliquer des filtres pour voir les objets disponibles.",
+        "German": "Bitte wenden Sie Filter an, um verfügbare Objekte anzuzeigen."
+    },
+    "no_data_warning": {
+        "English": "After applying the filters there must be data. Adjust filters and try again.",
+        "French": "Après avoir appliqué les filtres, des données doivent être disponibles. Ajustez les filtres et réessayez.",
+        "German": "Nach dem Anwenden der Filter müssen Daten vorhanden sein. Passen Sie die Filter an und versuchen Sie es erneut."
+    },
+    "confirm_filter": {
+        "English": engish_filtertwo,
+        "French": french_filtertwo,
+        "German": german_filtertwo
+    },
+    "filters_confirmed_message": {
+        "English": "Filters confirmed",
+        "French": "Filtres confirmés",
+        "German": "Filter bestätigt"
+    },
+
+    "filter_one_instructions": {
+        "English": english_filterone,
+        "French": french_filterone,
+        "German": german_filterone
+    },
+
+    "confirm_denied" :  {
+        "English": "Please apply the location filters and select any objects if you need to.",
+        "French": "Veuillez appliquer les filtres de localisation et sélectionner des objets si nécessaire.",
+        "German": "Bitte wenden Sie die Standortfilter an und wählen Sie bei Bedarf Objekte aus."
+    },
+    "update_captions": {
+        "English": "You need to update the chart explanations before you can chat.",
+        "French": "Vous devez mettre à jour les explications du graphique avant de pouvoir discuter.",
+        "German": "Sie müssen die Diagrammerklärungen aktualisieren, bevor Sie chatten können."
+    },
+    "select_feature_type": {
+        "English": "Select feature type",
+        "French": "Sélectionnez le type de fonctionnalité",
+        "German": "Funktionstyp auswählen"
+    },
+    "map_markers": {
+        "English": "Map markers",
+        "French": "Marqueurs de carte",
+        "German": "Kartenmarkierungen"
+    },
+    "intro_one": intro_one,
+    "intro_two": intro_two,
+    "intro_content": intro_content,
+    "instruction_labels": {
+        "English": English_instructions,
+        "French": French_instructions,
+        "German": German_instructions
+    }
+
+
+}

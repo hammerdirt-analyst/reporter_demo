@@ -1,4 +1,6 @@
 from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
+# from pygments.lexer import default
+
 import reporting_methods
 import plotly.express as px
 import streamlit as st
@@ -10,29 +12,67 @@ from langchain_core.messages import (
     HumanMessage,
     AIMessage, SystemMessage,
 )
-
+from typing import Union
+# import datetime
 load_dotenv()
+
 language_column_map = {"English": "en", "French": "fr", "German": "de"}
-def use_model(**kwargs):
+
+def use_model(**kwargs) -> Union[ChatOpenAI, str]:
+    """
+    Initializes and returns a ChatOpenAI model instance based on the provided keyword arguments.
+
+    Parameters
+    ----------
+    **kwargs : dict
+        Keyword arguments to configure the ChatOpenAI model. Must include a 'name' key with the value 'openai'.
+
+    Returns
+    -------
+    ChatOpenAI
+        An instance of the ChatOpenAI model if 'name' is 'openai'.
+    str
+        A message indicating no model was found if 'name' is not 'openai'.
+    """
     if kwargs.get('name') == 'openai':
         kwargs.pop('name')
         return ChatOpenAI(**kwargs)
     else:
         return "No model found"
 
-def translate_state_to_meta(state, code_groups, location, boundary) -> reporting_methods.ReportMeta:
-    """Converts the form state into a ReportMeta object. The report_meta object is used to filter the data and generate reports."""
 
+
+
+def translate_state_to_meta(state: dict, code_groups: pd.DataFrame, location: str, boundary: str) -> reporting_methods.ReportMeta:
+    """
+    Converts the form state into a ReportMeta object. The ReportMeta object is used to filter the data and generate reports.
+
+    Parameters
+    ----------
+    state : dict
+        A dictionary containing the form state with keys such as 'start_date', 'end_date', 'feature_type', and 'codes'.
+    code_groups : pd.DataFrame
+        A DataFrame containing code group information.
+    location : str
+        The location name.
+    boundary : str
+        The boundary type (e.g., canton, city).
+
+    Returns
+    -------
+    reporting_methods.ReportMeta
+        A ReportMeta object with the necessary metadata for generating reports.
+    """
     meta = {
         "name": location,
-        "start": state['start_date'],
-        "end": state['end_date'],
+        "start": state['date_range']['start'].strftime('%Y-%m-%d'),
+        "end": state['date_range']['end'].strftime('%Y-%m-%d'),
         "feature_type": state['feature_type'],
         "code_group_category": "Selected Codes",
         "boundary": boundary,
         "boundary_name": location if boundary else None,
         "feature_name": location if not boundary else None,
-        "report_codes": state['codes'],
+        "report_codes": state['selected_objects'],
         "info_columns": reporting_methods.info_columns,
         "columns_of_interest": reporting_methods.feature_variables
     }
@@ -122,24 +162,25 @@ def baseline_report_and_data(report_meta: reporting_methods.ReportMeta, data, ma
     return intro
 
 def generate_reports(state, code_groups, material_spec, data):
+    """Generate reports based on the selected state, code groups, material spec, and data"""
     reports = []
 
     if len(state['canton']) > 0:
         for location in state['canton']:
-            meta = translate_state_to_meta(state, code_groups, location, "canton")
-            report = baseline_report_and_data(meta, data, material_spec)
+            meta = reporting_methods.translate_state_to_meta(state, code_groups, location, "canton")
+            report = reporting_methods.baseline_report_and_data(meta, data, material_spec)
             reports.append(report)
 
     if len(state['city']) > 0:
         for location in state['city']:
-            meta = translate_state_to_meta(state, code_groups, location, "city")
-            report = baseline_report_and_data(meta, data, code_material)
+            meta = reporting_methods.translate_state_to_meta(state, code_groups, location, "city")
+            report = reporting_methods.baseline_report_and_data(meta, data, code_material)
             reports.append(report)
 
     if len(state['feature_name']) > 0:
         for location in state['feature_name']:
-            meta = translate_state_to_meta(state, code_groups, location, None)
-            report = baseline_report_and_data(meta, data, code_material)
+            meta = reporting_methods.translate_state_to_meta(state, code_groups, location, None)
+            report = reporting_methods.baseline_report_and_data(meta, data, code_material)
             reports.append(report)
 
     return "\n".join(reports)
@@ -157,7 +198,7 @@ def map_markers(f_data, map_coords):
     df = df.merge(map_coords[['longitude', 'latitude']], left_index=True, right_index=True)
     df['location'] = df.index
     df.rename(columns={'sample_id': 'nsamples', 'date': 'last sample'}, inplace=True)
-    df.reset_index(drop=False, inplace=True)
+    df.reset_index(drop=True, inplace=True)
     return df
 
 def scatter_map(f_data, map_coords):
@@ -171,16 +212,6 @@ def scatter_map(f_data, map_coords):
     print("Making map markers\n")
     print(f"Map marker columns: {', '.join(df.columns)}")
 
-    # Add hover text for each marker
-    # df["hover_text"] = (
-    #     "Location: " + df["location"] +
-    #     "<br>Samples: " + df["nsamples"].astype(str) +
-    #     "<br>Total Quantity: " + df["quantity"].astype(str) +
-    #     "<br>Rate (pcs/m): " + df["pcs/m"].astype(str) +
-    #     "<br>Last Sample: " + df["date"].astype(str)
-    # )
-
-    # Generate map with scatter_map
     fig = px.scatter_map(
         df,
         lat="latitude",
@@ -208,7 +239,7 @@ def scatter_map(f_data, map_coords):
         margin={"r": 0, "t": 0, "l": 0, "b": 0}
     )
 
-    return fig
+    return fig, df
 
 def apply_filters():
     """
@@ -218,35 +249,33 @@ def apply_filters():
     print("Applying filters\n")
     s_data = st.session_state["survey_data"]  # Original unfiltered data
     f_data = s_data.copy()
+    params = st.session_state['selected_parameters']
 
     # Step 1: Filter by Canton
-    s_cantons = st.session_state["canton"]
+    s_cantons = params["canton"]
     if s_cantons:
-        f_data = f_data[f_data["canton"].isin(selected_cantons)]
+        f_data = f_data[f_data["canton"].isin(params['canton'])]
 
     # Step 2: Filter by City
-    s_cities = st.session_state["city"]
+    s_cities = params["city"]
     if s_cities:
-        f_data = f_data[f_data["city"].isin(selected_cities)]
+        f_data = f_data[f_data["city"].isin(params['city'])]
 
     # Step 3: Filter by Feature Name
-    s_feature_names = st.session_state["feature_name"]
+    s_feature_names = params["feature_name"]
     if s_feature_names:
-        f_data = f_data[f_data["feature_name"].isin(selected_feature_names)]
+        f_data = f_data[f_data["feature_name"].isin(params['feature_name'])]
 
     # Step 4: Filter by Feature Type
-    f_type = st.session_state["feature_type"]
+    f_type = params["feature_type"]
     if f_type != "both":
-        feature_code = "l" if feature_type == "lake" else "r"
+        feature_code = "l" if f_type == "lake" else "r"
         f_data = f_data[f_data["feature_type"] == feature_code]
-    s_codes = st.session_state['selected_objects']
+    s_codes = params['selected_objects']
     if s_codes:
-        f_data = f_data[f_data['code'].isin(selected_codes)]
+        f_data = f_data[f_data['code'].isin(params['selected_objects'])]
     date_range = st.session_state["date_range"]
     if date_range:
-        print(date_range, type(date_range[0]))
-        print(type(f_data['date'].min()), f_data['date'].max())
-        print(f_data['date'].min() < pd.Timestamp(date_range[1]))
         mask = (f_data['date'] >= pd.Timestamp(date_range[0])) & (f_data['date'] <= pd.Timestamp(date_range[1]))
         f_data = f_data[mask]
     # Update session state with the filtered data
@@ -301,6 +330,7 @@ def scatterplot_caption(data, color_by, selected_language, llm):
     """
     d = data.groupby(['sample_id', 'date', color_by], as_index=False)["pcs/m"].sum()
     grouped_data_mean = d.groupby([color_by], as_index=False)["pcs/m"].mean()
+    grouped_data_mean = grouped_data_mean.sort_values(by="pcs/m", ascending=False)
     s_date, e_date = data.date.min().date(), data.date.max().date()
     ysummary = d["pcs/m"].describe(percentiles=[0.05, 0.25, 0.5, 0.75, 0.95])
     print(data.columns)
@@ -323,9 +353,6 @@ def scatterplot_caption(data, color_by, selected_language, llm):
         HumanMessage(content=querry)
     ]
 
-    # aresponse = llm.invoke(scatterplot_message)
-    # caption = aresponse.content
-
     return llm.stream(scatterplot_message)
 
 def scatterplot_title(s_language, s_labels, color):
@@ -341,7 +368,7 @@ def scatterplot_title(s_language, s_labels, color):
         str: The scatterplot title in the specified language.
     """
 
-    grouper = labels[color].get(s_language, s_labels[color].get("English"))
+    grouper = prompts.labels[color].get(s_language, s_labels[color].get("English"))
 
     title_templates = {
         "English": f"Cumulative pcs/m per survey by survey date, grouped by {grouper}",
@@ -364,7 +391,6 @@ def scatterplot(data, s_language, s_labels, color_by):
         x="date",
         y="pcs/m",
         color=color_by,
-        title=scatterplot_title(s_language, s_labels, color_by),
         labels={"date": "", "pcs/m": "pieces/meter"},
     )
 
@@ -404,11 +430,14 @@ def handle_grouped_data_for_barchart(data: pd.DataFrame, x_axis: str, y_axis: st
         grouped_data = data.groupby(x_axis, as_index=False)['sample_id'].nunique()
         grouped_data[y_axis] = grouped_data['sample_id']
         grouped_data.drop('sample_id', axis=1, inplace=True)
+        grouped_data = grouped_data.sort_values(by=y_axis, ascending=False)
     if y_axis == "quantity":
         grouped_data = data.groupby(x_axis)[y_axis].sum().reset_index()
+        grouped_data = grouped_data.sort_values(by=y_axis, ascending=False)
     if y_axis == "pcs/m":
         grouped_data = data.groupby(['sample_id', x_axis], as_index=False)[y_axis].sum()
         grouped_data = grouped_data.groupby(x_axis, as_index=False)[y_axis].mean().reset_index()
+        grouped_data = grouped_data.sort_values(by=y_axis, ascending=False)
 
     return grouped_data
 
@@ -422,7 +451,6 @@ def barchart_caption(data, x_axis, y_axis, s_language, llm):
     ]
 
     aresponse = llm.stream(barchart_message)
-    # caption = aresponse.content
 
     return aresponse
 
@@ -444,7 +472,6 @@ def barchart(data, x_axis, y_axis):
         grouped_data,
         x=x_axis,
         y=y_axis,
-        title=f"Bar Chart: Total {y_axis.capitalize()} by {x_axis.capitalize()}",
         labels={x_axis: x_axis.capitalize(), y_axis: y_axis.capitalize()},
         color=x_axis,
     )
@@ -462,6 +489,24 @@ def barchart(data, x_axis, y_axis):
     )
     return fig
 
+def apply_location_filters(data, selected_parameters):
+    if len(selected_parameters["canton"]) > 0:
+        data = data[data["canton"].isin(selected_parameters["canton"])]
+    if len(selected_parameters["city"]) > 0:
+        data = data[data["city"].isin(selected_parameters["city"])]
+    if len(selected_parameters["feature_name"]) > 0:
+        data = data[data["feature_name"].isin(selected_parameters["feature_name"])]
+    if selected_parameters["feature_type"] not in ['river', 'lake']:
+        pass
+    else:
+        if selected_parameters['feature_type'] == 'lake':
+            data = data[data['feature_type'] == 'l']
+        else:
+            data = data[data["feature_type"] == 'r']
+    data['date'] = pd.to_datetime(data['date'])
+    # data['date'] = data['date'].dt.date
+    return data
+
 def initialize_session_state(load_survey_data):
     """Set up initial state for session variables."""
     # Language selection
@@ -470,14 +515,14 @@ def initialize_session_state(load_survey_data):
 
     # Data and filtering
     if "filtered_data" not in st.session_state:
-        st.session_state["filtered_data"] = load_survey_data()
+        st.session_state["filtered_data"] = None #load_survey_data()
 
     if "survey_data" not in st.session_state:
         st.session_state["survey_data"] = load_survey_data()
 
     if "date_range" not in st.session_state:
-        min_d = st.session_state["filtered_data"]["date"].min()
-        max_d = st.session_state["filtered_data"]["date"].max()
+        min_d = st.session_state["survey_data"]["date"].min()
+        max_d = st.session_state["survey_data"]["date"].max()
         st.session_state["date_range"] = (min_d, max_d)
 
     if "rough_drafts" not in st.session_state:
@@ -492,327 +537,50 @@ def initialize_session_state(load_survey_data):
     if 'map_fig' not in st.session_state:
         st.session_state['map_fig'] = "No map generated yet."
 
+    if 'map_markers' not in st.session_state:
+        st.session_state['map_markers'] = "No map markers generated yet."
+
     if 'scatterplot_caption' not in st.session_state:
         st.session_state['scatterplot_caption'] = None
 
     if 'barchart_caption' not in st.session_state:
         st.session_state['barchart_caption'] = None
 
+    if "filters_confirmed" not in st.session_state:
+        st.session_state["filters_confirmed"] = False
 
-intro_one = {
-    "English": """
-    This is an application of large language models (LLMs) and machine learning to provide summary reports of volunteer observations of marine litter using the OSPAR, JRC, or NOAA methods for counting beach litter.
-    """,
-    "French": """
-    Ceci est une application de modèles de langage avancés (LLMs) et d'apprentissage automatique pour fournir des rapports résumés des observations bénévoles des déchets marins en utilisant les méthodes OSPAR, JRC ou NOAA pour le comptage des déchets sur les plages.
-    """,
-    "German": """
-    Dies ist eine Anwendung großer Sprachmodelle (LLMs) und maschinellen Lernens, um zusammenfassende Berichte über die Beobachtungen von Freiwilligen zu Meeresmüll zu erstellen, basierend auf den OSPAR-, JRC- oder NOAA-Methoden zur Erfassung von Strandmüll.
-    """
-}
+    if "selected_parameters" not in st.session_state:
+        st.session_state["selected_parameters"] = {
+            "canton": [],
+            "city": [],
+            "feature_name": [],
+            "feature_type": "both",
+            "date_range": {'start': None, 'end': None},
+            "selected_objects": []
+        }
+    if 'filtered_applied' not in st.session_state:
+        st.session_state['filtered_applied'] = False
 
-intro_two = {
-    "English": """
-    The inspiration for this is the millions of people each year throughout the world who spend the time to collect the data.
-    """,
-    "French": """
-    L'inspiration pour cela vient des millions de personnes à travers le monde qui, chaque année, prennent le temps de collecter les données.
-    """,
-    "German": """
-    Die Inspiration dafür sind die Millionen von Menschen weltweit, die jedes Jahr Zeit investieren, um die Daten zu sammeln.
-    """}
-
-intro_content = {
-    "English": """
-    **Welcome to the Swiss Litter Monitoring App!**
-
-    This app is designed to help stakeholders understand and analyze the types and quantities of litter found along rivers and lakes across Switzerland. By leveraging volunteer-collected data and established guidelines for monitoring marine litter in European seas, the app provides an insightful and comprehensive tool for tackling solid waste issues in these environments.
-
-    **Key Features:**
-    - Comprehensive Data Access: Explore all monitoring data collected since 2015.
-    - Insights and Reporting: Prepare detailed reports and consolidate volunteer observations.
-    - Community Collaboration: Benefit from the work of dedicated volunteers.
-
-    **Based on Proven Research:**  
-    This app is built on methodologies and insights from the following works:
-    - [IQAASL End of Sampling 2021](https://hammerdirt-analyst.github.io/IQAASL-End-0f-Sampling-2021/)  
-    - [Solid Waste Team](https://hammerdirt-analyst.github.io/solid-waste-team/titlepage.html)  
-    - [Land Use](https://hammerdirt-analyst.github.io/landuse/titlepage.html)  
-    - [Plastock](https://associationsauvegardeleman.github.io/plastock/)  
-    - [Finding One Object](https://hammerdirt-analyst.github.io/finding-one-object/titlepage.html)  
-
-    **Open Source and Transparent:**  
-    The app's source code, data, and documentation are available for review and collaboration:
-    [Explore the documentation and source code here](https://hammerdirt-analyst.github.io/feb_2024/titlepage.html#).
-    """,
-    "French": """
-    **Bienvenue dans l'application Swiss Litter Monitoring!**
-
-    Cette application est conçue pour aider les parties prenantes à comprendre et analyser les types et quantités de déchets trouvés le long des rivières et des lacs en Suisse. En s'appuyant sur des données collectées par des volontaires et des lignes directrices établies pour surveiller les déchets marins dans les mers européennes, l'application fournit un outil précieux et complet pour faire face aux problèmes de déchets solides dans ces environnements.
-
-    **Principales caractéristiques :**
-    - Accès complet aux données : Explorez toutes les données collectées depuis 2015.
-    - Informations et rapports : Préparez des rapports détaillés et consolidez les observations des volontaires.
-    - Collaboration communautaire : Profitez du travail de bénévoles dévoués.
-
-    **Basé sur des recherches éprouvées :**  
-    Cette application repose sur des méthodologies et des informations provenant des travaux suivants :
-    - [IQAASL End of Sampling 2021](https://hammerdirt-analyst.github.io/IQAASL-End-0f-Sampling-2021/)  
-    - [Solid Waste Team](https://hammerdirt-analyst.github.io/solid-waste-team/titlepage.html)  
-    - [Land Use](https://hammerdirt-analyst.github.io/landuse/titlepage.html)  
-    - [Plastock](https://associationsauvegardeleman.github.io/plastock/)  
-    - [Finding One Object](https://hammerdirt-analyst.github.io/finding-one-object/titlepage.html)  
-
-    **Source ouverte et transparente :**  
-    Le code source, les données et la documentation de l'application sont disponibles pour consultation et collaboration :
-    [Explorez la documentation et le code source ici](https://hammerdirt-analyst.github.io/feb_2024/titlepage.html#).
-    """,
-    "German": """
-    **Willkommen in der Swiss Litter Monitoring App!**
-
-    Diese App soll Interessengruppen dabei helfen, die Arten und Mengen von Abfall zu verstehen und zu analysieren, die entlang von Flüssen und Seen in der Schweiz gefunden werden. Durch die Nutzung von von Freiwilligen gesammelten Daten und etablierten Richtlinien zur Überwachung von Meeresmüll in europäischen Gewässern bietet die App ein wertvolles und umfassendes Werkzeug zur Bewältigung von Problemen mit festen Abfällen in diesen Umgebungen.
-
-    **Hauptmerkmale:**
-    - Umfassender Datenzugriff: Erkunden Sie alle seit 2015 gesammelten Überwachungsdaten.
-    - Einblicke und Berichte: Erstellen Sie detaillierte Berichte und konsolidieren Sie Beobachtungen von Freiwilligen.
-    - Gemeinschaftliche Zusammenarbeit: Profitieren Sie von der Arbeit engagierter Freiwilliger.
-
-    **Basierend auf bewährter Forschung:**  
-    Diese App basiert auf Methoden und Erkenntnissen aus den folgenden Arbeiten:
-    - [IQAASL End of Sampling 2021](https://hammerdirt-analyst.github.io/IQAASL-End-0f-Sampling-2021/)  
-    - [Solid Waste Team](https://hammerdirt-analyst.github.io/solid-waste-team/titlepage.html)  
-    - [Land Use](https://hammerdirt-analyst.github.io/landuse/titlepage.html)  
-    - [Plastock](https://associationsauvegardeleman.github.io/plastock/)  
-    - [Finding One Object](https://hammerdirt-analyst.github.io/finding-one-object/titlepage.html)  
-
-    **Offen und transparent:**  
-    Der Quellcode, die Daten und die Dokumentation der App sind zur Überprüfung und Zusammenarbeit verfügbar:
-    [Entdecken Sie hier die Dokumentation und den Quellcode](https://hammerdirt-analyst.github.io/feb_2024/titlepage.html#).
-    """
-}
-
-English_instructions = (
-    "Make a summary of data and select chart contents.\n\n"
-    "1. Select a canton, city, lake or river.\n"
-    "2. Select your date range.\n"
-    "3. Select the objects of interest.\n"
-    "4. Apply filters.\n"
-    "5. Make rough drafts.\n"
-    "6. Define chart contents and create summary of chart.\n"
-    "7. Chat with data.\n\n"
-)
-
-French_instructions = (
-    "Faites un résumé des données et sélectionnez le contenu du graphique.\n\n"
-    "1. Sélectionnez un canton, une ville, un lac ou une rivière.\n"
-    "2. Sélectionnez votre plage de dates.\n"
-    "3. Sélectionnez les objets d'intérêt.\n"
-    "4. Appliquez des filtres.\n"
-    "5. Faites des brouillons.\n"
-    "6. Définissez le contenu du graphique et créez un résumé du graphique.\n"
-    "7. Discutez avec les données.\n\n"
-)
-
-German_instructions = (
-    "Erstellen Sie eine Datenzusammenfassung und wählen Sie die Diagramminhalte aus.\n\n"
-    "1. Wählen Sie einen Kanton, eine Stadt, einen See oder einen Fluss aus.\n"
-    "2. Wählen Sie Ihren Datumsbereich aus.\n"
-    "3. Wählen Sie die interessierenden Objekte aus.\n"
-    "4. Wenden Sie Filter an.\n"
-    "5. Erstellen Sie grobe Entwürfe.\n"
-    "6. Definieren Sie die Diagramminhalte und erstellen Sie eine Zusammenfassung des Diagramms.\n"
-    "7. Chatten Sie mit den Daten.\n\n"
-)
-
-instruction_labels = {
-    "English": English_instructions,
-    "French": French_instructions,
-    "German": German_instructions
-}
-
-labels = {
-    "language": {
-        "English": "Language",
-        "French": "Langue",
-        "German": "Sprache"
-    },
-    "filtering_data": {
-        "English": "Filtering Data",
-        "French": "Filtrage des données",
-        "German": "Daten filtern"
-    },
-    "date_range": {
-        "English": "Date Range",
-        "French": "Plage de dates",
-        "German": "Datumsbereich"
-    },
-    "canton": {
-        "English": "Canton",
-        "French": "Canton",
-        "German": "Kanton"
-    },
-    "city": {
-        "English": "City",
-        "French": "Ville",
-        "German": "Stadt"
-    },
-    "feature_type": {
-        "English": "Feature Type",
-        "French": "Type de caractéristique",
-        "German": "Merkmaltyp"
-    },
-    "clear_filters": {
-        "English": "Clear Filters",
-        "French": "Effacer les filtres",
-        "German": "Filter löschen"
-    },
-    "apply_filters": {
-        "English": "Apply Filters",
-        "French": "Appliquer les filtres",
-        "German": "Filter anwenden"
-    },
-    "objects": {
-        "English": "Objects of Interest",
-        "French": "Objets d'intérêt",
-        "German": "Interessante Objekte"
-    },
-    "feature_name": {
-        "English": "Feature Name",
-        "French": "Nom du lac/rivière",
-        "German": "Merkmalsname"
-    },
-    "step_1": {
-        "English": "Step 1",
-        "French": "Étape 1",
-        "German": "Schritt 1"
-    },
-    "step_2": {
-        "English": "Step 2",
-        "French": "Étape 2",
-        "German": "Schritt 2"
-    },
-    "step_3": {
-        "English": "Step 3",
-        "French": "Étape 3",
-        "German": "Schritt 3"
-    },
-    "selected_parameters": {
-        "English": "Selected Parameters",
-        "French": "Paramètres sélectionnés",
-        "German": "Ausgewählte Parameter"
-    },
-    "whats_this": {
-        "English": "What's this?",
-        "French": "Qu'est-ce que c'est ?",
-        "German": "Was ist das?"
-    },
-    "parameter_selection": {
-        "English": "Parameter Selection",
-        "French": "Sélection des paramètres",
-        "German": "Parameterauswahl"
-    },
-    "step_1_subheader": {
-        "English": ":orange[Step 1: Select regions or feature of interest]",
-        "French": ":orange[Étape 1 : Sélectionnez les régions ou caractéristiques d'intérêt]",
-        "German": ":orange[Schritt 1 : Wählen Sie Regionen oder interessante Merkmale aus]"
-    },
-    "step_2_subheader": {
-        "English": ":orange[Step 2: Select date range]",
-        "French": ":orange[Étape 2 : Sélectionnez la plage de dates]",
-        "German": ":orange[Schritt 2: Wählen Sie den Datumsbereich aus]"
-    },
-    "step_3_subheader": {
-        "English": ":orange[Step 3: Select objects of interest]",
-        "French": ":orange[Étape 3 : Sélectionnez les objets d'intérêt]",
-        "German": ":orange[Schritt 3: Wählen Sie interessante Objekte aus]"
-    },
-    "step_4_subheader": {
-        "English": ":orange[Step 4: Filter data]",
-        "French": ":orange[Étape 4 : Filtrer les données]",
-        "German": "orange[Schritt 4: Daten filtern]"
-    },
-    "step_5_subheader": {
-        "English": ":orange[Step 5: Make rough draft]",
-        "French": ":orange[Étape 5 : Rédigez un brouillon]",
-        "German": ":orange[Schritt 5: Entwurf erstellen]"
-    },
-    "step_6_subheader": {
-        "English": ":orange[Step 6: Scatterplot parameters]",
-        "French": ":orange[Étape 6 : Nuage de points]",
-        "German": ":orange[Schritt 6: Streuplot-Parameter]"
-    },
-    "step_7_subheader": {
-        "English": ":orange[Step 7: Barchart parameters]",
-        "French": ":orange[Étape 7 : Diagramme en barres]",
-        "German": ":orange[Schritt 7: Balkendiagramm-Parameter]"
-    },
-    "start_date": {
-        "English": "Start Date",
-        "French": "Date de début",
-        "German": "Anfangsdatum"
-    },
-    "end_date": {
-        "English": "End Date",
-        "French": "Date de fin",
-        "German": "Enddatum"
-    },
-    "selected_date_range": {
-        "English": "Selected Date Range",
-        "French": "Plage de dates sélectionnée",
-        "German": "Ausgewählter Datumsbereich"
-    },
-    "selected_parameters_subheader": {
-        "English": "Selected Parameters",
-        "French": "Paramètres sélectionnés",
-        "German": "Ausgewählte Parameter"
-    },
-    "apply_filters_button": {
-        "English": "Apply Filters",
-        "French": "Appliquer les filtres",
-        "German": "Filter anwenden"
-    },
-    "filters_applied_message": {
-        "English": "Filters applied! ",
-        "French": "Filtres appliqués ! ",
-        "German": "Filter angewendet!"
-    },
-    "make_roughdraft": {
-        "English": "Make Roughdraft",
-        "French": "Créer un brouillon",
-        "German": "Entwurf erstellen"
-    },
-    "survey_results": {
-        "English":"Survey results",
-        "French": "Résultats de l'enquête",
-        "German": "Umfrageergebnisse"
-    },
-    "discussion": {
-        "English": "Discussion",
-        "French": "Discussion",
-        "German": "Diskussion"
-    },
-    "shoreline_litter_assessment": {
-        "English": "Shoreline litter assessment",
-        "French": "Évaluation des déchets sur le littoral",
-        "German": "Bewertung des Küstenmülls"
-    },
-    "summary": {
-        "English": "Summary",
-        "French": "Résumé",
-        "German": "Zusammenfassung"
-    },
-    "rough_draft": {
-        "English": "Rough draft",
-        "French": "Brouillon",
-        "German": "Entwurf"
-    },
-    "inventory": {
-        "English": "Inventory",
-        "French": "Inventaire",
-        "German": "Inventar"
-    }
-
-}
+agent_intro = {
+            "English": " ".join([
+                "Hi, I am the report assistant.",
+                "The rough draft, inventory and the text from the selected charts are loaded and available to me.",
+                "This is only a demonstration, we did not hook up the RAG agent but you can consult the references here:",
+                "https://hammerdirt-analyst.github.io/feb_2024/references.html."
+            ]),
+            "French": " ".join([
+                "Bonjour, je suis l'assistant de rapport.",
+                "L'ébauche, l'inventaire et le texte des graphiques sélectionnés sont chargés et à ma disposition.",
+                "Ceci est seulement une démonstration, nous n'avons pas connecté l'agent RAG mais vous pouvez consulter les références ici :",
+                "https://hammerdirt-analyst.github.io/feb_2024/references.html."
+            ]),
+            "German": " ".join([
+                "Hallo, ich bin der Berichtsassistent.",
+                "Der Entwurf, das Inventar und der Text aus den ausgewählten Diagrammen sind geladen und stehen mir zur Verfügung.",
+                "Dies ist nur eine Demonstration, wir haben den RAG-Agenten nicht angeschlossen, aber Sie können die Referenzen hier einsehen:",
+                "https://hammerdirt-analyst.github.io/feb_2024/references.html."
+            ])
+        }
 
 def translate_columns(language):
     # Translation dictionaries for column names
@@ -842,6 +610,8 @@ def translate_columns(language):
         return translations[language]
     else:
         raise ValueError(f"Language '{language}' not supported. Choose 'French' or 'German'.")
+
+# start app
 
 @st.cache_data
 def load_survey_data():
@@ -874,167 +644,202 @@ def lat_lon():
 initialize_session_state(load_survey_data=load_survey_data)
 model_args_no_streaming = dict(name='openai', model="gpt-4o-mini", temperature=0.6, max_tokens=1000,
                                        streaming=False)
-
 model_args_streaming = dict(name='openai', model="gpt-4o-mini", temperature=0.6, max_tokens=1000)
 if 'language' not in st.session_state:
     st.header("Shoreline litter assessment")
 else:
-    st.header(labels["shoreline_litter_assessment"][st.session_state['language']])
+    st.header(prompts.labels["shoreline_litter_assessment"][st.session_state['language']])
 language = st.radio(
     "", ["English", "French", "German"], index=0, horizontal=True, key="language"
 )
-st.markdown(intro_one[language])
+st.markdown(prompts.labels["intro_one"][language])
 st.image("resources/goodimage.webp")
-st.markdown(intro_two[language])
+st.markdown(prompts.labels["intro_two"][language])
 
-with st.expander(f"**{labels['whats_this'][language]}**", expanded=False):
-    st.markdown(intro_content[language])
+with st.expander(f"**{prompts.labels['whats_this'][language]}**", expanded=False):
+    st.markdown(prompts.labels["intro_content"][language])
 
-st.markdown(instruction_labels[language])
+st.markdown(prompts.labels["instruction_labels"][language])
 
-with st.expander(f"**{labels['parameter_selection'][language]}**", expanded=False):
+with st.expander(f"**{prompts.labels['parameter_selection'][language]}**", expanded=False):
     col1, col2 = st.columns(2)
     with col1:
-        print("Inside parameter selection\n")
-        st.write(f'**{labels["step_1_subheader"][language]}**')
+        st.write(f'**{prompts.labels["step_1_subheader"][language]}**')
         survey_data = st.session_state["survey_data"]
 
-        selected_cantons = st.multiselect(
-            label=labels["canton"][language],
+        selected_parameters = st.session_state["selected_parameters"]
+
+        # Step 1: Select Cantons
+        selected_parameters["canton"] = st.multiselect(
+            label=prompts.labels["canton"][language],
             options=survey_data["canton"].unique(),
-            default=st.session_state.get("canton", []),
+            default=selected_parameters["canton"],
             key="canton"
         )
 
-        if selected_cantons:
-            available_cities = survey_data[survey_data["canton"].isin(selected_cantons)]["city"].unique()
-        else:
-            available_cities = survey_data["city"].unique()
+        available_cities = apply_location_filters(survey_data, selected_parameters).city.unique()
 
-        selected_cities = st.multiselect(
-            label=labels["city"][language],
+        # Step 2: Select Cities
+        selected_parameters["city"] = st.multiselect(
+            label=prompts.labels["city"][language],
             options=available_cities,
-            default=st.session_state.get("city", []),
+            default=selected_parameters["city"],
             key="city"
         )
 
-        if selected_cantons:
-            available_feature_names = survey_data[survey_data["canton"].isin(selected_cantons)]["feature_name"].unique()
-
-        if selected_cities:
-            available_feature_names = survey_data[survey_data["city"].isin(selected_cities)]["feature_name"].unique()
-
-        if not selected_cantons and not selected_cities:
-            available_feature_names = survey_data["feature_name"].unique()
-
-        selected_feature_names = st.multiselect(
-            label=labels["feature_name"][language],
+        # Filter feature names based on selected cantons and cities
+        available_feature_names = apply_location_filters(survey_data, selected_parameters).feature_name.unique()#    survey_data["feature_name"].
+        # Step 3: Select Feature Names
+        selected_parameters["feature_name"] = st.multiselect(
+            label=prompts.labels["feature_name"][language],
             options=available_feature_names,
-            default=st.session_state.get("feature_name", []),
+            default=selected_parameters["feature_name"],
             key="feature_name"
         )
 
-        if selected_cantons:
-            available_feature_types = survey_data[survey_data["canton"].isin(selected_cantons)]["feature_type"].unique()
-        if selected_cities:
-            available_feature_types = survey_data[survey_data["city"].isin(selected_cities)]["feature_type"].unique()
-        if not selected_cantons and not selected_cities:
-            available_feature_types = survey_data["feature_type"].unique()
-
+        # Step 4: Select Feature Type
         feature_type_translations = {
             "lake": {"English": "Lake", "French": "Lac", "German": "See"},
             "river": {"English": "River", "French": "Rivière", "German": "Fluss"},
             "both": {"English": "Both", "French": "Les deux", "German": "Beide"}
         }
 
-        feature_type_mapping = {"l": "lake", "r": "river"}
-        available_feature_types_labels = [feature_type_mapping[ft] for ft in available_feature_types if
-                                          ft in feature_type_mapping]
-        if len(available_feature_types_labels) > 1:
-            available_feature_types_labels.append("both")
+        # st.markdown(f'{selected_parameters}')
 
-        def format_option(option):
-            return feature_type_translations[option][language]
+        available_feature_types = apply_location_filters(survey_data, selected_parameters).feature_type.unique()
+        if len(available_feature_types) > 1:
+            available_feature_types = ["lake", "river", "both"]
+        else:
+            if "l" in available_feature_types:
+                available_feature_types = ["lake"]
+            else:
+                available_feature_types = ["river"]
 
-        feature_type = st.radio(
-            label="Select feature type",
-            options=available_feature_types_labels if available_feature_types_labels else ["both"],
-            format_func=format_option,
-            horizontal=True,
-            index=0,
+        selected_parameters['feature_type']= st.pills(
+            label=prompts.labels["select_feature_type"][language],
+            options= available_feature_types,
+            format_func=lambda x: feature_type_translations[x][language],
+            default= selected_parameters["feature_type"] if selected_parameters["feature_type"] in available_feature_types else None,
             key="feature_type"
         )
 
-        st.write(f'**{labels["step_2_subheader"][language]}**')
+        st.write(f'**{prompts.labels["step_2_subheader"][language]}**')
 
-        min_date, max_date = update_date_range(st.session_state["filtered_data"])
-        print(f'in streamlit: {type(min_date)}, {max_date}\nsession state: {st.session_state["date_range"]}\n')
+        # Step 5: Select Date Range
+        available_dates =apply_location_filters(survey_data, selected_parameters)
+
+        min_date, max_date = update_date_range(available_dates)
 
         start_date = st.date_input(
-            label=labels["start_date"][language],
+            label=prompts.labels["start_date"][language],
             value=min_date,
             min_value=min_date,
             max_value=max_date,
             key="start_date"
         )
         end_date = st.date_input(
-            label=labels["end_date"][language],
+            label=prompts.labels["end_date"][language],
             value=max_date,
             min_value=min_date,
             max_value=max_date,
             key="end_date"
         )
-        st.session_state["date_range"] = (start_date, end_date)
-        selected_parameters = {
-            "canton": selected_cantons,
-            "city": selected_cities,
-            "feature_name": selected_feature_names,
-            "feature_type": feature_type,
-            "start_date": start_date.strftime("%Y-%m-%d"),
-            "end_date": end_date.strftime("%Y-%m-%d"),
-            "codes": st.session_state["selected_objects"] if "selected_objects" in st.session_state else []
-           }
-        st.write(f'**{labels["step_3_subheader"][language]}**')
+        selected_parameters["date_range"] = {'start':start_date, 'end': end_date}
+        st.markdown(f'**{prompts.labels["step_3_subheader"][language]}**')
+        st.markdown(prompts.labels["filter_one_instructions"][language])
 
-        language_column_map = {"English": "en", "French": "fr", "German": "de"}
-        description_column = language_column_map[st.session_state["language"]]
+        if st.button(prompts.labels["apply_filters_button"][language], key="apply_filters_buttonx"):
 
-        available_objects = st.session_state["filtered_data"]["code"].unique()
+            filtered_data = apply_location_filters(survey_data, selected_parameters)
 
-        object_descriptions = {row["code"]: row[description_column] for _, row in load_codes().iterrows() if
-                               row["code"] in available_objects}
+            date_mask = ((filtered_data["date"] >= pd.Timestamp(selected_parameters["date_range"]['start'])) &
+                 (filtered_data["date"] <= pd.Timestamp(selected_parameters["date_range"]['end'])))
 
-        selected_objects = st.multiselect(
-            label=labels["objects"][language],
-            options=list(object_descriptions.keys()),
-            format_func=lambda x: f"{x} - {object_descriptions.get(x, '')}",
-            default=st.session_state.get("selected_objects", []),
-            key="selected_objects"
-        )
+            filtered_data = filtered_data[date_mask].copy()
+            st.session_state['filtered_applied'] = True
 
-        selected_codes = [obj.split(" - ")[0] for obj in selected_objects]
-        selected_parameters["codes"] = selected_codes  # Update dynamically
+            st.session_state["filtered_data"] = filtered_data
+        if st.session_state['filtered_applied']:
+            st.success("Filters applied!")
+        if len(selected_parameters['canton']) + len(selected_parameters['city']) + len(selected_parameters['feature_name']) == 0:
+            st.info(prompts.labels['no_filter_warning'][language])
+        # Step 6: Object Selection
+        if st.session_state["filtered_data"] is not None:
+            available_objects = st.session_state["filtered_data"]
+            available_objects = available_objects[available_objects.quantity > 0]
+            available_object_codes = available_objects["code"].unique()
+
+            if len(available_object_codes) == 0:
+                st.warning(prompts.labels["nofilters"][language])
+            else:
+                these_codes = load_codes()[load_codes()["code"].isin(available_object_codes)]
+                description_column = {"English": "en", "French": "fr", "German": "de"}[language]
+                object_descriptions = {row["code"]: row[description_column] for _, row in these_codes.iterrows()}
+
+                selected_objects = st.multiselect(
+                    label=prompts.labels["objects"][language],
+                    options=list(object_descriptions.keys()),
+                    format_func=lambda x: f"{x} - {object_descriptions.get(x, '')}",
+                    default=st.session_state.get("selected_objects", []),
+                    key="selected_objects"
+                )
+
+                st.session_state["selected_parameters"]["selected_objects"] = selected_objects
+        else:
+            st.warning(prompts.labels["please_apply_filters"][language])
 
     with col2:
-        st.write(f'**{labels["selected_parameters_subheader"][language]}**')
-        st.json(selected_parameters)
-        st.write(f'**{labels["step_4_subheader"][language]}**')
-        if st.button(labels["apply_filters_button"][language], key="apply_filters_button"):
-            apply_filters()
-            st.success(labels["filters_applied_message"][language])
-        if st.button(labels['clear_filters'][language], key="clear_filters_button"):
+
+        st.markdown(f'**{prompts.labels["step_4_subheader"][language]}**')
+        st.markdown(prompts.labels["confirm_filter"][language])
+
+        # confirm filters button logic
+        if st.session_state["filtered_applied"]:
+            if st.button(prompts.labels["confirmfilters"][language], key="confirm_filters_button"):
+                apply_filters()
+                st.session_state["filters_confirmed"] = True
+                st.success(prompts.labels["filters_confirmed_message"][language])
+                if st.session_state["filtered_data"].quantity.sum() == 0:
+                    st.warning("No data available. Please adjust filters.")
+                    st.session_state["filters_applied"] = False  # Reset the flag if the data is empty
+        else:
+            st.warning(prompts.labels["confirm_denied"][language])
+
+        # Clear filters button logic
+        if st.button(prompts.labels["clear_filters"][language], key="clear_filters_button"):
+            st.session_state['filtered_applied'] = False
             clear_filters(load_survey_data)
             st.success("Filters cleared!")
-        st.write(f'**{labels["step_5_subheader"][language]}**')
-        if st.button(labels["make_roughdraft"][language], key="make_roughdraft_button"):
-            st.session_state["final_selected_parameters"] = selected_parameters
+
+
+        st.write(f'**{prompts.labels["selected_parameters_subheader"][language]}**')
+        # display selected parameters
+        st.json(st.session_state['selected_parameters'])
+
+        st.write(f'**{prompts.labels["step_5_subheader"][language]}**')
+
+        # Disable "make_roughdraft" button conditionally
+        if not st.session_state["filters_confirmed"] or st.session_state["filtered_data"].empty:
+            st.warning(prompts.labels["no_data_warning"][language])
+            st.button(prompts.labels["make_roughdraft"][language], key="make_roughdraft_button", disabled=True)
+        else:
+            if st.button(prompts.labels["make_roughdraft"][language], key="make_roughdraft_button"):
+                st.session_state["final_selected_parameters"] = selected_parameters
 
 if "language" not in st.session_state:
     st.subheader("Survey results")
 else:
-    st.subheader(labels["survey_results"][st.session_state['language']])
+    st.subheader(prompts.labels["survey_results"][st.session_state['language']])
 
-tab1, tab2, tab3, tab4, tab5 = st.tabs([labels["summary"][language], labels["step_6_subheader"][language], labels["step_7_subheader"][language], labels["inventory"][language], labels["rough_draft"][language]])
+tab1, tab2, tab3, tab4, tab5, tab6 = st.tabs(
+    [
+        prompts.labels["summary"][language],
+        prompts.labels["step_6_subheader"][language],
+        prompts.labels["step_7_subheader"][language],
+        prompts.labels["inventory"][language],
+        prompts.labels["rough_draft"][language],
+        prompts.labels['map_markers'][language]]
+)
 
 with tab1:
     if "final_selected_parameters" in st.session_state:
@@ -1043,7 +848,7 @@ with tab1:
             current_llm = use_model(**model_args_no_streaming)
             code_use = load_codes()[['code', 'groupname']].set_index('code')
             code_material = load_codes()[['code', 'material']].set_index('code')
-            st.session_state["rough_drafts"] = generate_reports(st.session_state["final_selected_parameters"], code_use, code_material, st.session_state['filtered_data'])
+            st.session_state["rough_drafts"] = generate_reports(st.session_state["selected_parameters"], code_use, code_material, st.session_state['filtered_data'])
             chart_data = st.session_state.get("filtered_data", pd.DataFrame())
             description_column = language_column_map[st.session_state["language"]]
             objects = chart_data[description_column].unique()
@@ -1065,8 +870,6 @@ with tab1:
 
             an_absract = current_llm.stream(abstract_message)
             abstract = st.write_stream(an_absract)
-            # print(abstract)
-            # g=AIMessage(content=abstract)
             st.session_state['abstract'] = abstract
         else:
             st.markdown(st.session_state['abstract'])
@@ -1084,15 +887,15 @@ with tab1:
         if st.session_state["map_fig"] == "No map generated yet.":
             chart_data = st.session_state.get("filtered_data", pd.DataFrame())
 
-            map_fig = scatter_map(chart_data, lat_lon())
+            map_fig, map_markers = scatter_map(chart_data, lat_lon())
             st.session_state["map_fig"] = map_fig
+            st.session_state["map_markers"] = map_markers
             st.plotly_chart(st.session_state["map_fig"], use_container_width=True)
         else:
             st.plotly_chart(st.session_state["map_fig"], use_container_width=True)
             chart_data = st.session_state.get("filtered_data", pd.DataFrame())
     else:
-        st.warning("No rough-draft created")
-        # current_llm = use_model(**model_args_no_streaming)
+        st.warning(prompts.labels["no_rough_draft_message"][language])
         chart_data = pd.DataFrame()
 
 with tab2:
@@ -1103,21 +906,18 @@ with tab2:
             "Color By", ["canton", "city", "feature_name"], key="scatter_color_by"
         )
 
-        scatter_fig = scatterplot(chart_data, st.session_state['language'], labels, scatter_color_by)
+        scatter_fig = scatterplot(chart_data, st.session_state['language'], prompts.labels, scatter_color_by)
         st.plotly_chart(scatter_fig, use_container_width=True, config=config)
 
-        # Initialize session state variables if not already set
         if "scatterplot_previous_color_by" not in st.session_state:
             st.session_state["scatterplot_previous_color_by"] = None
         if "scatterplot_caption" not in st.session_state:
             st.session_state["scatterplot_caption"] = None
 
-        # Reset caption if color-by selection changes
         if st.session_state["scatterplot_previous_color_by"] != scatter_color_by:
             st.session_state["scatterplot_caption"] = None
             st.session_state["scatterplot_previous_color_by"] = scatter_color_by
 
-        # Display existing caption or handle button click
         if st.session_state["scatterplot_caption"] is not None:
             st.write(st.session_state["scatterplot_caption"])
         else:
@@ -1125,11 +925,9 @@ with tab2:
                 l = st.session_state['language']
                 explanation = scatterplot_caption(chart_data, scatter_color_by, l, current_llm)
                 scatter_plot_caption = st.write_stream(explanation)
-
-                # Store the generated caption in session state
                 st.session_state["scatterplot_caption"] = scatter_plot_caption
     else:
-       st.warning("No data available. Please apply filters.")
+       st.warning(prompts.labels["no_rough_draft_message"][language])
 
 with tab3:
     if not chart_data.empty:
@@ -1159,7 +957,7 @@ with tab3:
 
                 st.session_state["barchart_caption"] = bar_chart_caption
     else:
-        st.warning("No data available. Please apply filters.")
+        st.warning(prompts.labels["no_rough_draft_message"][language])
 
 with tab4:
     if not chart_data.empty:
@@ -1171,22 +969,28 @@ with tab4:
         if st.session_state['language'] != 'English':
             column_translations = translate_columns(st.session_state['language'])
             inv.rename(columns=column_translations, inplace=True)
-        inv = inv.style.set_table_styles(reporting_methods.table_css_styles).format(**reporting_methods.format_kwargs)
+        # inv = inv.style.set_table_styles(reporting_methods.table_css_styles).format(**reporting_methods.format_kwargs)
         st.session_state["inventory"] = reporting_methods.extract_roughdraft_text(adict)
-        st.dataframe(inv)
+        st.dataframe(inv.style.set_table_styles(reporting_methods.table_css_styles).format(**reporting_methods.format_kwargs))
     else:
-        st.warning("No data available. Please apply filters.")
+        st.warning(prompts.labels["no_rough_draft_message"][language])
 
 with tab5:
     if "final_selected_parameters" in st.session_state:
         st.write(st.session_state["rough_drafts"])
     else:
-        st.warning("Select parameters, update the chart definitions and then you can chat with the data")
+        st.warning(prompts.labels["no_rough_draft_message"][language])
+
+with tab6:
+    if isinstance(st.session_state.map_markers, (str, )):
+        st.warning("No map markers generated yet.")
+    else:
+        st.dataframe(st.session_state["map_markers"])
 
 if 'language' not in st.session_state:
     st.subheader("Discussion")
 else:
-    st.subheader(labels["discussion"][st.session_state['language']])
+    st.subheader(prompts.labels["discussion"][st.session_state['language']])
 
 if "final_selected_parameters" in st.session_state:
 
@@ -1194,7 +998,6 @@ if "final_selected_parameters" in st.session_state:
         if "messages" not in st.session_state:
             st.session_state.messages = []
         chat_llm = ChatOpenAI(**model_args_streaming)
-        print(st.session_state.keys())
         the_report_prompt = prompts.reporter_prompt(
             st.session_state['abstract'],
             st.session_state["scatterplot_caption"],
@@ -1212,32 +1015,12 @@ if "final_selected_parameters" in st.session_state:
         )
 
         the_report_agent = a_report_prompt | chat_llm
-        agent_intro = {
-            "English": " ".join([
-                "Hi, I am the report assistant.",
-                "The rough draft, inventory and the text from the selected charts are loaded and available to me.",
-                "This is only a demonstration, we did not hook up the RAG agent but you can consult the references here:",
-                "https://hammerdirt-analyst.github.io/feb_2024/references.html."
-            ]),
-            "French": " ".join([
-                "Bonjour, je suis l'assistant de rapport.",
-                "L'ébauche, l'inventaire et le texte des graphiques sélectionnés sont chargés et à ma disposition.",
-                "Ceci est seulement une démonstration, nous n'avons pas connecté l'agent RAG mais vous pouvez consulter les références ici :",
-                "https://hammerdirt-analyst.github.io/feb_2024/references.html."
-            ]),
-            "German": " ".join([
-                "Hallo, ich bin der Berichtsassistent.",
-                "Der Entwurf, das Inventar und der Text aus den ausgewählten Diagrammen sind geladen und stehen mir zur Verfügung.",
-                "Dies ist nur eine Demonstration, wir haben den RAG-Agenten nicht angeschlossen, aber Sie können die Referenzen hier einsehen:",
-                "https://hammerdirt-analyst.github.io/feb_2024/references.html."
-            ])
-        }
-        # session state
+
         if "chat_history" not in st.session_state:
             st.session_state.chat_history = [
                 AIMessage(content=agent_intro[st.session_state["language"]]),
             ]
-        # conversation
+
         for message in st.session_state.chat_history:
             if isinstance(message, AIMessage):
                 with st.chat_message("AI"):
@@ -1247,7 +1030,6 @@ if "final_selected_parameters" in st.session_state:
                 with st.chat_message("Human"):
                     st.write(message.content)
 
-        # user input
         user_query = st.chat_input("Type your message here...")
         if user_query is not None and user_query != "":
             st.session_state.chat_history.append(HumanMessage(content=user_query))
@@ -1262,7 +1044,6 @@ if "final_selected_parameters" in st.session_state:
 
             st.session_state.chat_history.append(AIMessage(content=r))
     else:
-        st.warning("You need to update the chart explanations. before you can chat")
-
+        st.warning(prompts.labels["update_captions"][language])
 else:
-    st.warning("No roughdrafts generated yet.")
+    st.warning(prompts.labels["no_rough_draft_message"][language])

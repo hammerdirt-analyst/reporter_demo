@@ -4,6 +4,9 @@ import pandas as pd
 import numpy as np
 from pydantic import BaseModel, Field
 from typing import List,Optional
+# import pandas as pd
+from sklearn.metrics.pairwise import cosine_similarity
+from sklearn.preprocessing import MinMaxScaler
 
 # The following are the default values for the report
 report_quantiles = [.05, .25, .5, .75, .95]
@@ -548,4 +551,147 @@ def survey_totals_for_all_info_cols(report_meta: ReportMeta, survey_report: Surv
 
     return results
 
+def translate_state_to_meta(state: dict, code_groups: pd.DataFrame, location: str, boundary: str = None) -> ReportMeta:
+    """
+    Converts the form state into a ReportMeta object. The ReportMeta object is used to filter the data and generate reports.
+
+    Parameters
+    ----------
+    state : dict
+        A dictionary containing the form state with keys such as 'start_date', 'end_date', 'feature_type', and 'codes'.
+    code_groups : pd.DataFrame
+        A DataFrame containing code group information.
+    location : str
+        The location name.
+    boundary : str
+        The boundary type (e.g., canton, city).
+
+    Returns
+    -------
+    reporting_methods.ReportMeta
+        A ReportMeta object with the necessary metadata for generating reports.
+    """
+    meta = {
+        "name": location,
+        "start": state['date_range']['start'].strftime('%Y-%m-%d'),
+        "end": state['date_range']['end'].strftime('%Y-%m-%d'),
+        "feature_type": state['feature_type'],
+        "code_group_category": "Selected Codes",
+        "boundary": boundary,
+        "boundary_name": location if boundary else None,
+        "feature_name": location if not boundary else None,
+        "report_codes": state['selected_objects'],
+        "info_columns": info_columns,
+        "columns_of_interest": feature_variables
+    }
+
+    meta['report_title'] = f"{meta['name']} {meta['feature_type']}"
+    meta['report_subtitle'] = f"Codes: {meta['code_group_category']}"
+    meta['title_notes'] = "Proof of concept AI assisted reporting"
+    meta['author'] = "hammerdirt analyst"
+    meta['code_types'] = code_groups.loc[meta['report_codes']].groupname.unique().tolist()
+
+    return ReportMeta(**meta)
+
+def filter_dataframe_with_reportmeta(report_meta: ReportMeta, data: pd.DataFrame):
+    """
+    Filters the DataFrame based on the conditions provided in report_meta.
+
+    Parameters
+    ----------
+    report_meta : dict
+        Dictionary containing the filtering criteria.
+    data : pd.DataFrame
+        The application state containing the DataFrame to filter.
+
+    Returns
+    -------
+    pd.DataFrame
+        The filtered DataFrame.
+    """
+    f_data = data.copy()
+
+    if report_meta.get('start'):
+        f_data = f_data[f_data['date'] >= f"{report_meta.start}"]
+
+    if report_meta.get('end'):
+        f_data = f_data[f_data['date'] <= f"{report_meta.end}"]
+
+    if report_meta.get('boundary') and report_meta.boundary_name:
+        boundary = report_meta.boundary
+        boundary_name = report_meta.boundary_name
+        f_data = f_data[f_data[boundary] == boundary_name]
+
+    if report_meta.get('feature_type'):
+        if report_meta.feature_type == 'lake':
+            f_data = f_data[f_data['feature_type'] == 'l']
+        elif report_meta.feature_type == 'river':
+            f_data = f_data[f_data['feature_type'] == 'r']
+
+    if report_meta.get('feature_name'):
+        f_data = f_data[f_data['feature_name'] == report_meta.feature_name]
+
+    if report_meta.get('report_codes'):
+        codes = report_meta.report_codes
+        f_data = f_data[f_data['code'].isin(codes)]
+
+    return f_data
+
+def baseline_report_and_data(report_meta: ReportMeta, data, material_spec):
+    """Produces a rough draft report from the survey data and report meta-data"""
+
+    df = filter_dataframe_with_reportmeta(report_meta, data)
+    survey_report = SurveyReport(df)
+    # baseline report sections
+    admin_boundaries = extract_roughdraft_text(survey_report.administrative_boundaries())
+    features = extract_roughdraft_text(survey_report.feature_inventory())
+    summary_stats = extract_roughdraft_text(survey_report.sampling_results_summary)
+    materials = extract_roughdraft_text(survey_report.material_report(material_spec))
+    survey_totals = extract_roughdraft_text(survey_totals_for_all_info_cols(report_meta, survey_report))
+    inventory = extract_roughdraft_text(survey_report.object_summary())
+
+    # report title section
+    title = "## " + report_meta.report_title + "\n"
+    objectsoi = "**Objects:** " + ', '.join(report_meta.code_types) + "\n\n"
+    notes = "**Notes:** " + report_meta.title_notes + "\n\n"
+    author = "**Author:** " + report_meta.author + "\n\n"
+    intro = f'{title}{objectsoi}{notes}{author}'
+
+    # individual sections
+    for section in [summary_stats, admin_boundaries, features, materials, survey_totals, inventory]:
+        intro += section + "\n"
+
+    return intro
+
+def compute_similarity_matrix(dataframe, columns, id_column, column_to_normalize):
+    """
+    Computes a cosine similarity matrix for specified columns in a DataFrame.
+
+    Parameters:
+        dataframe (pd.DataFrame): The input DataFrame containing data.
+        columns (list): List of columns to compute similarity on.
+        id_column (str): Column name to use as row and column labels in the output matrix.
+        column_to_normalize (str): Column that needs to be separately normalized.
+
+    Returns:
+        pd.DataFrame: A DataFrame representing the cosine similarity matrix.
+    """
+    # Create a copy of the DataFrame to avoid modifying the original
+    df = dataframe.copy()
+
+    # Normalize the specified column separately
+    scaler = MinMaxScaler()
+    df[column_to_normalize] = scaler.fit_transform(df[[column_to_normalize]])
+
+    # Use the specified columns for similarity calculation
+    features = df[columns]
+
+    # Compute cosine similarity
+    similarity_matrix = cosine_similarity(features)
+
+    # Convert the matrix to a DataFrame for better readability
+    similarity_df = pd.DataFrame(similarity_matrix,
+                                 index=df[id_column],
+                                 columns=df[id_column])
+    return similarity_df
 

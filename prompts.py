@@ -149,11 +149,10 @@ intro_two = {
     """}
 intro_content = {
     "English": """
-### Welcome to the Swiss Report Assistant!
+### The Report Assistant
+As a supplement to the 2022 Swiss Federal Report on Trash Density [IQAASL End of Sampling 2021](https://hammerdirt-analyst.github.io/IQAASL-End-0f-Sampling-2021/), this assistant bridges the gap between static publications and dynamic, query-driven analysis. It offers the flexibility and depth needed to address questions and insights that couldn’t be covered in traditional reports.
 
-This assistant is designed to help stakeholders generate customized reports tailored to their specific needs—whether for a community, lake, or canton. By leveraging advanced language models (LLMs), it enables you to explore, filter, and analyze data interactively. Stakeholders can ask questions and receive clear, contextual explanations of the output, empowering them to make informed decisions.
-
-As a supplement to the 2022 Swiss Federal Report on Trash Density [IQAASL](link to federal report), this assistant bridges the gap between static publications and dynamic, query-driven analysis. It offers the flexibility and depth needed to address questions and insights that couldn’t be covered in traditional reports.
+The assistant helps stakeholders generate customized reports quickly, tailored to their specific needs—whether for a community, lake, or canton. By leveraging advanced language models (LLMs), it enables you to explore, filter, and analyze data interactively. Stakeholders can ask questions and receive clear, contextual explanations of the output, empowering them to make informed decisions.
 
 **Based on field experience**  
 This app is built on methodologies and insights from the following works:
@@ -168,11 +167,10 @@ The app's source code, data, and documentation are available for review and coll
 [Explore the documentation and source code here](https://hammerdirt-analyst.github.io/feb_2024/titlepage.html#).
 """,
     "French": """
-### Bienvenue à l'Assistant de Rapport Suisse!
+### L'assistant de rapport
+En complément du Rapport fédéral suisse 2022 sur la densité des déchets [IQAASL End of Sampling 2021](https://hammerdirt-analyst.github.io/IQAASL-End-0f-Sampling-2021/), cet assistant comble le fossé entre les publications statiques et les analyses dynamiques basées sur des requêtes. Il offre la flexibilité et la profondeur nécessaires pour aborder des questions et des idées qui ne pouvaient être couvertes dans les rapports traditionnels.
 
-Cet assistant est conçu pour aider les parties prenantes à générer des rapports personnalisés adaptés à leurs besoins spécifiques—qu'il s'agisse d'une communauté, d'un lac ou d'un canton. En exploitant des modèles de langage avancés (LLMs), il permet d'explorer, de filtrer et d'analyser les données de manière interactive. Les utilisateurs peuvent poser des questions et recevoir des explications contextuelles claires sur les résultats, leur permettant de prendre des décisions éclairées.
-
-En complément du Rapport fédéral suisse 2022 sur la densité des déchets [IQAASL](link to federal report), cet assistant comble le fossé entre les publications statiques et les analyses dynamiques basées sur des requêtes. Il offre la flexibilité et la profondeur nécessaires pour aborder des questions et des idées qui ne pouvaient être couvertes dans les rapports traditionnels.
+L'assistant aide les parties prenantes à générer rapidement des rapports personnalisés, adaptés à leurs besoins spécifiques—qu'il s'agisse d'une communauté, d'un lac ou d'un canton. En exploitant des modèles de langage avancés (LLMs), il permet d'explorer, de filtrer et d'analyser les données de manière interactive. Les parties prenantes peuvent poser des questions et recevoir des explications contextuelles claires sur les résultats, leur permettant de prendre des décisions éclairées.
 
 **Basé sur l'expérience de terrain**  
 Cette application est basée sur des méthodologies et des idées issues des travaux suivants :  
@@ -187,11 +185,10 @@ Le code source, les données et la documentation de l'application sont disponibl
 [Explorez la documentation et le code source ici](https://hammerdirt-analyst.github.io/feb_2024/titlepage.html#).
 """,
     "German": """
-### Willkommen beim Schweizer Berichtsassistenten!
+### Der Berichtsassistent
+Als Ergänzung zum Schweizerischen Bundesbericht 2022 über die Abfalldichte [IQAASL End of Sampling 2021](https://hammerdirt-analyst.github.io/IQAASL-End-0f-Sampling-2021/) überbrückt dieser Assistent die Lücke zwischen statischen Veröffentlichungen und dynamischen, abfragegesteuerten Analysen. Er bietet die Flexibilität und Tiefe, die erforderlich sind, um Fragen und Erkenntnisse zu bearbeiten, die in traditionellen Berichten nicht behandelt werden konnten.
 
-Dieser Assistent wurde entwickelt, um Stakeholder dabei zu unterstützen, maßgeschneiderte Berichte zu erstellen, die auf ihre spezifischen Bedürfnisse zugeschnitten sind—sei es für eine Gemeinde, einen See oder einen Kanton. Durch den Einsatz fortschrittlicher Sprachmodelle (LLMs) ermöglicht er es, Daten interaktiv zu erkunden, zu filtern und zu analysieren. Stakeholder können Fragen stellen und klare, kontextbezogene Erklärungen zu den Ergebnissen erhalten, um fundierte Entscheidungen zu treffen.
-
-Als Ergänzung zum Schweizerischen Bundesbericht 2022 über die Abfalldichte [IQAASL](link to federal report) überbrückt dieser Assistent die Lücke zwischen statischen Veröffentlichungen und dynamischen, abfragegesteuerten Analysen. Er bietet die Flexibilität und Tiefe, die erforderlich sind, um Fragen und Erkenntnisse zu bearbeiten, die in traditionellen Berichten nicht behandelt werden konnten.
+Der Assistent hilft Stakeholdern, schnell maßgeschneiderte Berichte zu erstellen, die auf ihre spezifischen Bedürfnisse zugeschnitten sind—sei es für eine Gemeinde, einen See oder einen Kanton. Durch den Einsatz fortschrittlicher Sprachmodelle (LLMs) ermöglicht er es, Daten interaktiv zu erkunden, zu filtern und zu analysieren. Stakeholder können Fragen stellen und klare, kontextbezogene Erklärungen zu den Ergebnissen erhalten, um fundierte Entscheidungen zu treffen.
 
 **Basierend auf Felderfahrungen**  
 Diese App basiert auf Methoden und Erkenntnissen aus den folgenden Arbeiten:  

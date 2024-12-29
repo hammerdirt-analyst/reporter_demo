@@ -1,6 +1,4 @@
 from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
-# from pygments.lexer import default
-
 import reporting_methods
 import plotly.express as px
 import streamlit as st
@@ -13,7 +11,7 @@ from langchain_core.messages import (
     AIMessage, SystemMessage,
 )
 from typing import Union
-# import datetime
+
 load_dotenv()
 
 language_column_map = {"English": "en", "French": "fr", "German": "de"}
@@ -40,126 +38,10 @@ def use_model(**kwargs) -> Union[ChatOpenAI, str]:
     else:
         return "No model found"
 
-
-
-
-def translate_state_to_meta(state: dict, code_groups: pd.DataFrame, location: str, boundary: str) -> reporting_methods.ReportMeta:
-    """
-    Converts the form state into a ReportMeta object. The ReportMeta object is used to filter the data and generate reports.
-
-    Parameters
-    ----------
-    state : dict
-        A dictionary containing the form state with keys such as 'start_date', 'end_date', 'feature_type', and 'codes'.
-    code_groups : pd.DataFrame
-        A DataFrame containing code group information.
-    location : str
-        The location name.
-    boundary : str
-        The boundary type (e.g., canton, city).
-
-    Returns
-    -------
-    reporting_methods.ReportMeta
-        A ReportMeta object with the necessary metadata for generating reports.
-    """
-    meta = {
-        "name": location,
-        "start": state['date_range']['start'].strftime('%Y-%m-%d'),
-        "end": state['date_range']['end'].strftime('%Y-%m-%d'),
-        "feature_type": state['feature_type'],
-        "code_group_category": "Selected Codes",
-        "boundary": boundary,
-        "boundary_name": location if boundary else None,
-        "feature_name": location if not boundary else None,
-        "report_codes": state['selected_objects'],
-        "info_columns": reporting_methods.info_columns,
-        "columns_of_interest": reporting_methods.feature_variables
-    }
-
-    meta['report_title'] = f"{meta['name']} {meta['feature_type']}"
-    meta['report_subtitle'] = f"Codes: {meta['code_group_category']}"
-    meta['title_notes'] = "Proof of concept AI assisted reporting"
-    meta['author'] = "hammerdirt analyst"
-    meta['code_types'] = code_groups.loc[meta['report_codes']].groupname.unique().tolist()
-
-    return reporting_methods.ReportMeta(**meta)
-
-def filter_dataframe_with_reportmeta(report_meta: reporting_methods.ReportMeta, data: pd.DataFrame):
-    """
-    Filters the DataFrame based on the conditions provided in report_meta.
-
-    Parameters
-    ----------
-    report_meta : dict
-        Dictionary containing the filtering criteria.
-    data : pd.DataFrame
-        The application state containing the DataFrame to filter.
-
-    Returns
-    -------
-    pd.DataFrame
-        The filtered DataFrame.
-    """
-    f_data = data.copy()
-
-    # Apply date range filter
-    if report_meta.get('start'):
-        f_data = f_data[f_data['date'] >= f"{report_meta.start}"]
-
-    if report_meta.get('end'):
-        f_data = f_data[f_data['date'] <= f"{report_meta.end}"]
-
-    # Apply boundary conditions
-    if report_meta.get('boundary') and report_meta.boundary_name:
-        boundary = report_meta.boundary
-        boundary_name = report_meta.boundary_name
-        f_data = f_data[f_data[boundary] == boundary_name]
-
-    # Apply feature type filter
-    if report_meta.get('feature_type'):
-        if report_meta.feature_type == 'lake':
-            f_data = f_data[f_data['feature_type'] == 'l']
-        elif report_meta.feature_type == 'river':
-            f_data = f_data[f_data['feature_type'] == 'r']
-
-    # Apply feature name filter
-    if report_meta.get('feature_name'):
-        f_data = f_data[f_data['feature_name'] == report_meta.feature_name]
-
-    # Apply object codes filter
-    if report_meta.get('report_codes'):
-        codes = report_meta.report_codes
-        f_data = f_data[f_data['code'].isin(codes)]
-
-    return f_data
-
-def baseline_report_and_data(report_meta: reporting_methods.ReportMeta, data, material_spec):
-
-    df = filter_dataframe_with_reportmeta(report_meta, data)
-    survey_report = reporting_methods.SurveyReport(df) # , feature_variables=report_meta.columns_of_interest,
-                               # info_columns=report_meta.info_columns)
-
-    # baseline report sections
-    admin_boundaries = reporting_methods.extract_roughdraft_text(survey_report.administrative_boundaries())
-    features = reporting_methods.extract_roughdraft_text(survey_report.feature_inventory())
-    summary_stats = reporting_methods.extract_roughdraft_text(survey_report.sampling_results_summary)
-    materials = reporting_methods.extract_roughdraft_text(survey_report.material_report(material_spec))
-    survey_totals = reporting_methods.extract_roughdraft_text(reporting_methods.survey_totals_for_all_info_cols(report_meta, survey_report))
-    inventory = reporting_methods.extract_roughdraft_text(survey_report.object_summary())
-
-    # report title section
-    title = "## " + report_meta.report_title + "\n"
-    objectsoi = "**Objects:** " + ', '.join(report_meta.code_types) + "\n\n"
-    notes = "**Notes:** " + report_meta.title_notes + "\n\n"
-    author = "**Author:** " + report_meta.author + "\n\n"
-    intro = f'{title}{objectsoi}{notes}{author}'
-
-    # individual sections
-    for section in [summary_stats, admin_boundaries, features, materials, survey_totals, inventory]:
-        intro += section + "\n"
-
-    return intro
+def use_labels(label: str, language: str = None) -> str:
+    if language is None:
+        language = st.session_state['language']
+    return prompts.labels[label][language]
 
 def generate_reports(state, code_groups, material_spec, data):
     """Generate reports based on the selected state, code groups, material spec, and data"""
@@ -264,7 +146,7 @@ def apply_filters():
     # Step 3: Filter by Feature Name
     s_feature_names = params["feature_name"]
     if s_feature_names:
-        f_data = f_data[f_data["feature_name"].isin(params['feature_name'])]
+        f_data = f_data[f_data["feature_name"].isin(s_feature_names)]
 
     # Step 4: Filter by Feature Type
     f_type = params["feature_type"]
@@ -288,6 +170,8 @@ def clear_filters(data_from_cache):
 
     # Reinitialize the session state
     initialize_session_state(data_from_cache)
+    # st.session_state.clear()
+    # initialize_session_state(data_from_cache)
 
 def update_date_range(f_data):
     """
@@ -355,29 +239,6 @@ def scatterplot_caption(data, color_by, selected_language, llm):
 
     return llm.stream(scatterplot_message)
 
-def scatterplot_title(s_language, s_labels, color):
-    """
-    Generates a title for a scatterplot in the specified language.
-
-    Args:
-        s_language (str): The desired language for the title ("English", "French", "German").
-        s_labels (dict): A dictionary containing language-specific labels for the color groupings.
-        color (str): The key for the color grouping.
-
-    Returns:
-        str: The scatterplot title in the specified language.
-    """
-
-    grouper = prompts.labels[color].get(s_language, s_labels[color].get("English"))
-
-    title_templates = {
-        "English": f"Cumulative pcs/m per survey by survey date, grouped by {grouper}",
-        "French": f"Pièces cumulées/m par enquête par date d'enquête, regroupées par {grouper}",
-        "German": f"Kumulative Stk./m pro Umfrage nach Umfragedatum, gruppiert nach {grouper}",
-    }
-
-    return title_templates.get(language, title_templates["English"])
-
 def scatterplot(data, s_language, s_labels, color_by):
     """
     Creates a scatter plot.
@@ -391,7 +252,7 @@ def scatterplot(data, s_language, s_labels, color_by):
         x="date",
         y="pcs/m",
         color=color_by,
-        labels={"date": "", "pcs/m": "pieces/meter"},
+        labels={"date": "", "pcs/m": prompts.labels["pieces_per_meter"][s_language]},
     )
 
     fig.update_traces(
@@ -472,7 +333,7 @@ def barchart(data, x_axis, y_axis):
         grouped_data,
         x=x_axis,
         y=y_axis,
-        labels={x_axis: x_axis.capitalize(), y_axis: y_axis.capitalize()},
+        labels={x_axis: " ", y_axis: prompts.labels[y_axis][st.session_state["language"]]},
         color=x_axis,
     )
     fig.update_layout(
@@ -490,6 +351,8 @@ def barchart(data, x_axis, y_axis):
     return fig
 
 def apply_location_filters(data, selected_parameters):
+    """This applies location filters only and formats the date column"""
+
     if len(selected_parameters["canton"]) > 0:
         data = data[data["canton"].isin(selected_parameters["canton"])]
     if len(selected_parameters["city"]) > 0:
@@ -582,34 +445,6 @@ agent_intro = {
             ])
         }
 
-def translate_columns(language):
-    # Translation dictionaries for column names
-    translations = {
-        "French": {
-            "code": "code",
-            "object": "objet",
-            "quantity": "quantité",
-            "pcs/m": "pcs/m",
-            "% of total": "% du total",
-            "number of samples": "Nombre d'échantillons",
-            "fail rate": "taux d'échec"
-        },
-        "German": {
-            "code": "Code",
-            "object": "Objekt",
-            "quantity": "Menge",
-            "pcs/m": "Stk/m",
-            "% of total": "% des Gesamt",
-            "number of samples": "Proben nummer",
-            "fail rate": "Fehlerrate"
-        }
-    }
-
-    # Return the translation dictionary for the requested language
-    if language in translations:
-        return translations[language]
-    else:
-        raise ValueError(f"Language '{language}' not supported. Choose 'French' or 'German'.")
 
 # start app
 
@@ -669,7 +504,7 @@ with st.expander(f"**{prompts.labels['parameter_selection'][language]}**", expan
 
         selected_parameters = st.session_state["selected_parameters"]
 
-        # Step 1: Select Cantons
+        # Step 1: Select regions or features
         selected_parameters["canton"] = st.multiselect(
             label=prompts.labels["canton"][language],
             options=survey_data["canton"].unique(),
@@ -678,8 +513,6 @@ with st.expander(f"**{prompts.labels['parameter_selection'][language]}**", expan
         )
 
         available_cities = apply_location_filters(survey_data, selected_parameters).city.unique()
-
-        # Step 2: Select Cities
         selected_parameters["city"] = st.multiselect(
             label=prompts.labels["city"][language],
             options=available_cities,
@@ -687,24 +520,13 @@ with st.expander(f"**{prompts.labels['parameter_selection'][language]}**", expan
             key="city"
         )
 
-        # Filter feature names based on selected cantons and cities
-        available_feature_names = apply_location_filters(survey_data, selected_parameters).feature_name.unique()#    survey_data["feature_name"].
-        # Step 3: Select Feature Names
+        available_feature_names = apply_location_filters(survey_data, selected_parameters).feature_name.unique()
         selected_parameters["feature_name"] = st.multiselect(
             label=prompts.labels["feature_name"][language],
             options=available_feature_names,
             default=selected_parameters["feature_name"],
             key="feature_name"
         )
-
-        # Step 4: Select Feature Type
-        feature_type_translations = {
-            "lake": {"English": "Lake", "French": "Lac", "German": "See"},
-            "river": {"English": "River", "French": "Rivière", "German": "Fluss"},
-            "both": {"English": "Both", "French": "Les deux", "German": "Beide"}
-        }
-
-        # st.markdown(f'{selected_parameters}')
 
         available_feature_types = apply_location_filters(survey_data, selected_parameters).feature_type.unique()
         if len(available_feature_types) > 1:
@@ -714,22 +536,19 @@ with st.expander(f"**{prompts.labels['parameter_selection'][language]}**", expan
                 available_feature_types = ["lake"]
             else:
                 available_feature_types = ["river"]
-
         selected_parameters['feature_type']= st.pills(
             label=prompts.labels["select_feature_type"][language],
             options= available_feature_types,
-            format_func=lambda x: feature_type_translations[x][language],
+            format_func=lambda x: prompts.labels[x][language],
             default= selected_parameters["feature_type"] if selected_parameters["feature_type"] in available_feature_types else None,
             key="feature_type"
         )
 
         st.write(f'**{prompts.labels["step_2_subheader"][language]}**')
 
-        # Step 5: Select Date Range
+        # Step 2: Select Date Range
         available_dates =apply_location_filters(survey_data, selected_parameters)
-
         min_date, max_date = update_date_range(available_dates)
-
         start_date = st.date_input(
             label=prompts.labels["start_date"][language],
             value=min_date,
@@ -745,6 +564,8 @@ with st.expander(f"**{prompts.labels['parameter_selection'][language]}**", expan
             key="end_date"
         )
         selected_parameters["date_range"] = {'start':start_date, 'end': end_date}
+
+        # Step 3: Apply Filters and select objects
         st.markdown(f'**{prompts.labels["step_3_subheader"][language]}**')
         st.markdown(prompts.labels["filter_one_instructions"][language])
 
@@ -759,11 +580,13 @@ with st.expander(f"**{prompts.labels['parameter_selection'][language]}**", expan
             st.session_state['filtered_applied'] = True
 
             st.session_state["filtered_data"] = filtered_data
+            st.session_state["selected_parameters"] = selected_parameters
         if st.session_state['filtered_applied']:
-            st.success("Filters applied!")
+            st.success(prompts.labels["filters_applied_message"][language])
+        # warning if no filters are applied
         if len(selected_parameters['canton']) + len(selected_parameters['city']) + len(selected_parameters['feature_name']) == 0:
             st.info(prompts.labels['no_filter_warning'][language])
-        # Step 6: Object Selection
+        # object Selection
         if st.session_state["filtered_data"] is not None:
             available_objects = st.session_state["filtered_data"]
             available_objects = available_objects[available_objects.quantity > 0]
@@ -789,7 +612,7 @@ with st.expander(f"**{prompts.labels['parameter_selection'][language]}**", expan
             st.warning(prompts.labels["please_apply_filters"][language])
 
     with col2:
-
+        # step 4 : confirm filters
         st.markdown(f'**{prompts.labels["step_4_subheader"][language]}**')
         st.markdown(prompts.labels["confirm_filter"][language])
 
@@ -805,18 +628,18 @@ with st.expander(f"**{prompts.labels['parameter_selection'][language]}**", expan
         else:
             st.warning(prompts.labels["confirm_denied"][language])
 
-        # Clear filters button logic
+        # clear filters button logic
         if st.button(prompts.labels["clear_filters"][language], key="clear_filters_button"):
             st.session_state['filtered_applied'] = False
             clear_filters(load_survey_data)
             st.success("Filters cleared!")
 
 
-        st.write(f'**{prompts.labels["selected_parameters_subheader"][language]}**')
+        st.markdown(f'**{prompts.labels["selected_parameters_subheader"][language]}**')
         # display selected parameters
         st.json(st.session_state['selected_parameters'])
 
-        st.write(f'**{prompts.labels["step_5_subheader"][language]}**')
+        st.markdown(f'**{prompts.labels["step_5_subheader"][language]}**')
 
         # Disable "make_roughdraft" button conditionally
         if not st.session_state["filters_confirmed"] or st.session_state["filtered_data"].empty:
@@ -903,7 +726,10 @@ with tab2:
         current_llm = use_model(**model_args_streaming)
 
         scatter_color_by = st.selectbox(
-            "Color By", ["canton", "city", "feature_name"], key="scatter_color_by"
+            label=prompts.labels["color_markers_by"][language],
+            options = ['canton', 'city', 'feature_name'],
+            format_func=use_labels,
+            key="scatter_color_by"
         )
 
         scatter_fig = scatterplot(chart_data, st.session_state['language'], prompts.labels, scatter_color_by)
@@ -921,7 +747,7 @@ with tab2:
         if st.session_state["scatterplot_caption"] is not None:
             st.write(st.session_state["scatterplot_caption"])
         else:
-            if st.button("Explain Chart", key="scatterplot_caption_button"):
+            if st.button(prompts.labels["explain_graphic"][st.session_state["language"]], key="scatterplot_caption_button"):
                 l = st.session_state['language']
                 explanation = scatterplot_caption(chart_data, scatter_color_by, l, current_llm)
                 scatter_plot_caption = st.write_stream(explanation)
@@ -933,8 +759,16 @@ with tab3:
     if not chart_data.empty:
         print('in bar chart\n')
         print(f"The chart data columns are: {chart_data.columns}\n")
-        x_axis = st.selectbox("X-Axis", ["canton", "city", "feature_name", "object"], key="bar_x_axis")
-        y_axis = st.selectbox("Y-Axis", ["quantity", "pcs/m", "number of samples"], key="bar_y_axis")
+        x_axis = st.selectbox(
+            label="X-Axis",
+            options=["canton", "city", "feature_name", "object"],
+            format_func=use_labels,
+            key="bar_x_axis")
+        y_axis = st.selectbox(
+            label="Y-Axis",
+            options=["quantity", "pcs/m", "number of samples"],
+            format_func=use_labels,
+            key="bar_y_axis")
         barchart_color_by = x_axis
         bar_fig = barchart(chart_data, x_axis, y_axis)
         st.plotly_chart(bar_fig, use_container_width=True, config=config)
@@ -950,7 +784,7 @@ with tab3:
         if st.session_state["barchart_caption"] is not None:
             st.write(st.session_state["barchart_caption"])
         else:
-            if st.button("Explain Chart", key="barchart_caption_button"):
+            if st.button(prompts.labels["explain_graphic"][st.session_state["language"]], key="barchart_caption_button"):
                 l = st.session_state['language']
                 explanation = barchart_caption(chart_data,x_axis, y_axis, l, current_llm)
                 bar_chart_caption = st.write_stream(explanation)
@@ -967,7 +801,7 @@ with tab4:
         print(st.session_state['language'])
         inv.rename(columns={'sample_id': 'number of samples'}, inplace=True)
         if st.session_state['language'] != 'English':
-            column_translations = translate_columns(st.session_state['language'])
+            column_translations = prompts.translate_columns(st.session_state['language'])
             inv.rename(columns=column_translations, inplace=True)
         # inv = inv.style.set_table_styles(reporting_methods.table_css_styles).format(**reporting_methods.format_kwargs)
         st.session_state["inventory"] = reporting_methods.extract_roughdraft_text(adict)

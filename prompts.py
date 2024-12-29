@@ -588,7 +588,77 @@ labels = {
         "English": English_instructions,
         "French": French_instructions,
         "German": German_instructions
-    }
+    },
+"pieces_per_meter": {
+    "English": "pieces/meter",
+    "French": "pièces/mètre",
+    "German": "Stücke/Meter"
+},
+"color_markers_by" :{
+    "English": "Color markers by",
+    "French": "Colorier les marqueurs par",
+    "German": "Markierungen einfärben nach"
+},
+"quantity": {
+    "English": "quantity",
+    "French": "quantité",
+    "German": "Menge"
+},
+"number of samples": {
+    "English": "number of samples",
+    "French": "nombre d'échantillons",
+    "German": "Anzahl der Proben"
+},
+"object": {
+    "English": "object",
+    "French": "objet",
+    "German": "Objekt"
+},
+
+"pcs/m" : {
+    "English": "pieces/meter",
+    "French": "pièces/mètre",
+    "German": "Stücke/Meter"
+},
+"explain_graphic" : {
+    "English": "Explain graphic",
+    "French": "Expliquer le graphique",
+    "German": "Grafik erklären"
+},
+    "lake": {"English": "Lake", "French": "Lac", "German": "See"},
+    "river": {"English": "River", "French": "Rivière", "German": "Fluss"},
+    "both": {"English": "Both", "French": "Les deux", "German": "Beide"}
+
+
 
 
 }
+
+def translate_columns(language):
+    # Translation dictionaries for column names
+    translations = {
+        "French": {
+            "code": "code",
+            "object": "objet",
+            "quantity": "quantité",
+            "pcs/m": "pcs/m",
+            "% of total": "% du total",
+            "number of samples": "Nombre d'échantillons",
+            "fail rate": "taux d'échec"
+        },
+        "German": {
+            "code": "Code",
+            "object": "Objekt",
+            "quantity": "Menge",
+            "pcs/m": "Stk/m",
+            "% of total": "% des Gesamt",
+            "number of samples": "Proben nummer",
+            "fail rate": "Fehlerrate"
+        }
+    }
+
+    # Return the translation dictionary for the requested language
+    if language in translations:
+        return translations[language]
+    else:
+        raise ValueError(f"Language '{language}' not supported. Choose 'French' or 'German'.")

@@ -4,7 +4,6 @@ import pandas as pd
 import numpy as np
 from pydantic import BaseModel, Field
 from typing import List,Optional
-# import pandas as pd
 from sklearn.metrics.pairwise import cosine_similarity
 from sklearn.preprocessing import MinMaxScaler
 
@@ -106,7 +105,7 @@ class ReportMeta(BaseModel):
                                                description="The family descriptive name of the objects under consideration")
     roughdraft_name: Optional[str] = Field('rough_draft.md', description="String for rough draft name")
     report_subtitle: str = Field(
-        "This the roughdraft report of the observations of trash density along rivers and lakes",
+        "This is the roughdraft report of the observations of trash density along rivers and lakes",
         description="String for report subtitle")
     author: str = "AI reporter from hammerdirt"
     local_directory: str = Field(None, description="The parent directory of the reports")
@@ -281,7 +280,7 @@ class SurveyReport:
         place_names = ""
         for a_label, a_list in feature_names.items():
             if a_label != location_label:
-                place_names += f"{a_label.capitalize()}: {', '.join(a_list)}\n"
+                place_names += f"**{a_label.capitalize()}:** {', '.join(a_list)}\n\n"
         section_description = section_description + place_names.title()
         return [{'dataframe': result,
                  'prompt': {'section_label': section_label, 'section_description': section_description}}]

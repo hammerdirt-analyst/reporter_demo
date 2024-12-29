@@ -679,7 +679,6 @@ with tab1:
             current_llm = use_model(**model_args_no_streaming)
             code_use = load_codes()[['code', 'groupname']].set_index('code')
             code_material = load_codes()[['code', 'material']].set_index('code')
-            st.json(st.session_state["selected_parameters"])
             st.session_state["rough_drafts"] = generate_reports(st.session_state["selected_parameters"], code_use, code_material, st.session_state['filtered_data'])
             chart_data = st.session_state.get("filtered_data", pd.DataFrame())
             description_column = language_column_map[st.session_state["language"]]
@@ -698,7 +697,6 @@ with tab1:
                 SystemMessage(prompts.abstract_prompt(st.session_state['language'], feature_type, objects, cantons)),
                 HumanMessage(content=st.session_state['rough_drafts'])
             ]
-
 
             an_absract = current_llm.stream(abstract_message)
             abstract = st.write_stream(an_absract)
@@ -834,7 +832,6 @@ if 'language' not in st.session_state:
     st.subheader("Discussion")
 else:
     st.subheader(prompts.labels["discussion"][st.session_state['language']])
-
 if "final_selected_parameters" in st.session_state:
 
     if st.session_state["barchart_caption"] is not None and st.session_state["scatterplot_caption"] is not None:

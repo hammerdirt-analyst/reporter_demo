@@ -502,33 +502,41 @@ with st.expander(f"**{prompts.labels['parameter_selection'][language]}**", expan
         st.write(f'**{prompts.labels["step_1_subheader"][language]}**')
         survey_data = st.session_state["survey_data"]
 
-        selected_parameters = st.session_state["selected_parameters"]
+        # selected_parameters = st.session_state["selected_parameters"].copy()
 
         # Step 1: Select regions or features
-        selected_parameters["canton"] = st.multiselect(
+        st.session_state['selected_parameters']["canton"] = st.multiselect(
             label=prompts.labels["canton"][language],
             options=survey_data["canton"].unique(),
-            default=selected_parameters["canton"],
+            default=st.session_state['selected_parameters']["canton"],
             key="canton"
         )
 
-        available_cities = apply_location_filters(survey_data, selected_parameters).city.unique()
-        selected_parameters["city"] = st.multiselect(
+        if len(st.session_state['selected_parameters']["canton"]) > 0:
+            available_cities = apply_location_filters(survey_data, st.session_state['selected_parameters']).city.unique()
+        else:
+            available_cities = survey_data.city.unique()
+        st.session_state['selected_parameters']["city"] = st.multiselect(
             label=prompts.labels["city"][language],
             options=available_cities,
-            default=selected_parameters["city"],
+            default=st.session_state['selected_parameters']["city"],
             key="city"
         )
 
-        available_feature_names = apply_location_filters(survey_data, selected_parameters).feature_name.unique()
-        selected_parameters["feature_name"] = st.multiselect(
+        if len(st.session_state['selected_parameters']["city"]) > 0:
+            available_feature_names = apply_location_filters(survey_data, st.session_state['selected_parameters']).feature_name.unique()
+        if len(st.session_state['selected_parameters']["canton"]) > 0:
+            available_feature_names = survey_data[survey_data["canton"].isin(st.session_state['selected_parameters']["canton"])]["feature_name"].unique()
+        else:
+            available_feature_names = survey_data["feature_name"].unique()
+        st.session_state['selected_parameters']["feature_name"] = st.multiselect(
             label=prompts.labels["feature_name"][language],
             options=available_feature_names,
-            default=selected_parameters["feature_name"],
+            default=st.session_state['selected_parameters']["feature_name"],
             key="feature_name"
         )
 
-        available_feature_types = apply_location_filters(survey_data, selected_parameters).feature_type.unique()
+        available_feature_types = apply_location_filters(survey_data, st.session_state['selected_parameters']).feature_type.unique()
         if len(available_feature_types) > 1:
             available_feature_types = ["lake", "river", "both"]
         else:
@@ -536,18 +544,18 @@ with st.expander(f"**{prompts.labels['parameter_selection'][language]}**", expan
                 available_feature_types = ["lake"]
             else:
                 available_feature_types = ["river"]
-        selected_parameters['feature_type']= st.pills(
+        st.session_state['selected_parameters']['feature_type']= st.pills(
             label=prompts.labels["select_feature_type"][language],
             options= available_feature_types,
             format_func=lambda x: prompts.labels[x][language],
-            default= selected_parameters["feature_type"] if selected_parameters["feature_type"] in available_feature_types else None,
+            default= st.session_state['selected_parameters']["feature_type"] if st.session_state['selected_parameters']["feature_type"] in available_feature_types else None,
             key="feature_type"
         )
 
         st.write(f'**{prompts.labels["step_2_subheader"][language]}**')
 
         # Step 2: Select Date Range
-        available_dates =apply_location_filters(survey_data, selected_parameters)
+        available_dates =apply_location_filters(survey_data, st.session_state['selected_parameters'])
         min_date, max_date = update_date_range(available_dates)
         start_date = st.date_input(
             label=prompts.labels["start_date"][language],
@@ -563,7 +571,7 @@ with st.expander(f"**{prompts.labels['parameter_selection'][language]}**", expan
             max_value=max_date,
             key="end_date"
         )
-        selected_parameters["date_range"] = {'start':start_date, 'end': end_date}
+        st.session_state['selected_parameters']["date_range"] = {'start':start_date, 'end': end_date}
 
         # Step 3: Apply Filters and select objects
         st.markdown(f'**{prompts.labels["step_3_subheader"][language]}**')
@@ -571,20 +579,20 @@ with st.expander(f"**{prompts.labels['parameter_selection'][language]}**", expan
 
         if st.button(prompts.labels["apply_filters_button"][language], key="apply_filters_buttonx"):
 
-            filtered_data = apply_location_filters(survey_data, selected_parameters)
+            filtered_data = apply_location_filters(survey_data, st.session_state['selected_parameters'])
 
-            date_mask = ((filtered_data["date"] >= pd.Timestamp(selected_parameters["date_range"]['start'])) &
-                 (filtered_data["date"] <= pd.Timestamp(selected_parameters["date_range"]['end'])))
+            date_mask = ((filtered_data["date"] >= pd.Timestamp(st.session_state['selected_parameters']["date_range"]['start'])) &
+                 (filtered_data["date"] <= pd.Timestamp(st.session_state['selected_parameters']["date_range"]['end'])))
 
             filtered_data = filtered_data[date_mask].copy()
             st.session_state['filtered_applied'] = True
 
             st.session_state["filtered_data"] = filtered_data
-            st.session_state["selected_parameters"] = selected_parameters
+            #st.session_state["selected_parameters"] = selected_parameters
         if st.session_state['filtered_applied']:
             st.success(prompts.labels["filters_applied_message"][language])
         # warning if no filters are applied
-        if len(selected_parameters['canton']) + len(selected_parameters['city']) + len(selected_parameters['feature_name']) == 0:
+        if len(st.session_state['selected_parameters']['canton']) + len(st.session_state['selected_parameters']['city']) + len(st.session_state['selected_parameters']['feature_name']) == 0:
             st.info(prompts.labels['no_filter_warning'][language])
         # object Selection
         if st.session_state["filtered_data"] is not None:
@@ -647,7 +655,7 @@ with st.expander(f"**{prompts.labels['parameter_selection'][language]}**", expan
             st.button(prompts.labels["make_roughdraft"][language], key="make_roughdraft_button", disabled=True)
         else:
             if st.button(prompts.labels["make_roughdraft"][language], key="make_roughdraft_button"):
-                st.session_state["final_selected_parameters"] = selected_parameters
+                st.session_state["final_selected_parameters"] = st.session_state['selected_parameters']
 
 if "language" not in st.session_state:
     st.subheader("Survey results")
@@ -671,6 +679,7 @@ with tab1:
             current_llm = use_model(**model_args_no_streaming)
             code_use = load_codes()[['code', 'groupname']].set_index('code')
             code_material = load_codes()[['code', 'material']].set_index('code')
+            st.json(st.session_state["selected_parameters"])
             st.session_state["rough_drafts"] = generate_reports(st.session_state["selected_parameters"], code_use, code_material, st.session_state['filtered_data'])
             chart_data = st.session_state.get("filtered_data", pd.DataFrame())
             description_column = language_column_map[st.session_state["language"]]

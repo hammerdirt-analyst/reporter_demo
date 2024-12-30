@@ -3,93 +3,57 @@ import reporting_methods
 import plotly.express as px
 import streamlit as st
 import pandas as pd
+from typing import Iterator
 import prompts
 from dotenv import load_dotenv
 from langchain_openai import ChatOpenAI
 from langchain_core.messages import (
     HumanMessage,
-    AIMessage, SystemMessage,
+    AIMessage, SystemMessage, BaseMessageChunk
 )
 from typing import Union
 
 load_dotenv()
 
+# the column names for the different language descriptions
 language_column_map = {"English": "en", "French": "fr", "German": "de"}
 
-def use_model(**kwargs) -> Union[ChatOpenAI, str]:
+def map_markers(f_data: pd.DataFrame, map_coords: pd.DataFrame) -> pd.DataFrame:
     """
-    Initializes and returns a ChatOpenAI model instance based on the provided keyword arguments.
+    Generates the data for the map markers. Includes, number of samples, quantity, pcs/m, and last sample date.
+    for each location.
 
-    Parameters
-    ----------
-    **kwargs : dict
-        Keyword arguments to configure the ChatOpenAI model. Must include a 'name' key with the value 'openai'.
+    Args:
+        f_data (pd.DataFrame): Filtered data containing survey results.
+        map_coords (pd.DataFrame): DataFrame containing the coordinates (latitude and longitude).
 
-    Returns
-    -------
-    ChatOpenAI
-        An instance of the ChatOpenAI model if 'name' is 'openai'.
-    str
-        A message indicating no model was found if 'name' is not 'openai'.
+    Returns:
+        pd.DataFrame: DataFrame containing the merged data with map markers.
     """
-    if kwargs.get('name') == 'openai':
-        kwargs.pop('name')
-        return ChatOpenAI(**kwargs)
-    else:
-        return "No model found"
-
-def use_labels(label: str, language: str = None) -> str:
-    if language is None:
-        language = st.session_state['language']
-    return prompts.labels[label][language]
-
-def generate_reports(state, code_groups, material_spec, data):
-    """Generate reports based on the selected state, code groups, material spec, and data"""
-    reports = []
-
-    if len(state['canton']) > 0:
-        for location in state['canton']:
-            meta = reporting_methods.translate_state_to_meta(state, code_groups, location, "canton")
-            report = reporting_methods.baseline_report_and_data(meta, data, material_spec)
-            reports.append(report)
-
-    if len(state['city']) > 0:
-        for location in state['city']:
-            meta = reporting_methods.translate_state_to_meta(state, code_groups, location, "city")
-            report = reporting_methods.baseline_report_and_data(meta, data, code_material)
-            reports.append(report)
-
-    if len(state['feature_name']) > 0:
-        for location in state['feature_name']:
-            meta = reporting_methods.translate_state_to_meta(state, code_groups, location, None)
-            report = reporting_methods.baseline_report_and_data(meta, data, code_material)
-            reports.append(report)
-
-    return "\n".join(reports)
-
-def map_markers(f_data, map_coords):
-    """Map the markers"""
-
     nsamples = f_data.groupby('location', observed=True)['sample_id'].nunique()
     qty_location = f_data.groupby('location', observed=True)['quantity'].sum()
     rate_location = f_data.groupby('location', observed=True)['pcs/m'].mean().round(2)
     last_sample = f_data.groupby('location', observed=True)['date'].max()
 
-    # merge the pop-up information with the gps coordinates
     df = pd.concat([nsamples, qty_location, rate_location, last_sample], axis=1)
     df = df.merge(map_coords[['longitude', 'latitude']], left_index=True, right_index=True)
     df['location'] = df.index
     df.rename(columns={'sample_id': 'nsamples', 'date': 'last sample'}, inplace=True)
     df.reset_index(drop=True, inplace=True)
     return df
-
-def scatter_map(f_data, map_coords):
+def scatter_map(f_data: pd.DataFrame, map_coords: pd.DataFrame) -> tuple[px.scatter_map, pd.DataFrame]:
     """
     Generates a map with markers using Plotly's scatter_map.
     - Markers use lat/lon from map_markers.
     - Hover information includes samples, quantity, pcs/m, and last sample date.
+
+    Args:
+        f_data (pd.DataFrame): Filtered data containing survey results.
+        map_coords (pd.DataFrame): DataFrame containing the coordinates (latitude and longitude).
+
+    Returns:
+        tuple: A tuple containing the Plotly scatter map figure and the DataFrame with map markers.
     """
-    # Call your map_markers function to get the processed data
     df = map_markers(f_data, map_coords)
     print("Making map markers\n")
     print(f"Map marker columns: {', '.join(df.columns)}")
@@ -123,94 +87,29 @@ def scatter_map(f_data, map_coords):
 
     return fig, df
 
-def apply_filters():
-    """
-    Updates `f_data` based on the current selections in session state.
-    Uses OR logic for each selection and dynamically narrows down options.
-    """
-    print("Applying filters\n")
-    s_data = st.session_state["survey_data"]  # Original unfiltered data
-    f_data = s_data.copy()
-    params = st.session_state['selected_parameters']
-
-    # Step 1: Filter by Canton
-    s_cantons = params["canton"]
-    if s_cantons:
-        f_data = f_data[f_data["canton"].isin(params['canton'])]
-
-    # Step 2: Filter by City
-    s_cities = params["city"]
-    if s_cities:
-        f_data = f_data[f_data["city"].isin(params['city'])]
-
-    # Step 3: Filter by Feature Name
-    s_feature_names = params["feature_name"]
-    if s_feature_names:
-        f_data = f_data[f_data["feature_name"].isin(s_feature_names)]
-
-    # Step 4: Filter by Feature Type
-    f_type = params["feature_type"]
-    if f_type != "both":
-        feature_code = "l" if f_type == "lake" else "r"
-        f_data = f_data[f_data["feature_type"] == feature_code]
-    s_codes = params['selected_objects']
-    if s_codes:
-        f_data = f_data[f_data['code'].isin(params['selected_objects'])]
-    date_range = st.session_state["date_range"]
-    if date_range:
-        mask = (f_data['date'] >= pd.Timestamp(date_range[0])) & (f_data['date'] <= pd.Timestamp(date_range[1]))
-        f_data = f_data[mask]
-    # Update session state with the filtered data
-    st.session_state["filtered_data"] = f_data.reset_index(drop=True)
-
-def clear_filters(data_from_cache):
-    """Clear all filters and reinitialize session state."""
-    # Clear all session state variables
-    st.session_state.clear()
-
-    # Reinitialize the session state
-    initialize_session_state(data_from_cache)
-    # st.session_state.clear()
-    # initialize_session_state(data_from_cache)
-
-def update_date_range(f_data):
-    """
-    Updates the min and max date range based on the filtered data.
-    Ensures all dates are consistently `datetime.date` objects.
-    """
-    # Calculate the min and max dates as datetime.date
-    min_d = f_data["date"].min()
-    max_d = f_data["date"].max()
-
-    # Ensure date_range exists in session state
-    if "date_range" not in st.session_state or len(st.session_state["date_range"]) != 2:
-        st.session_state["date_range"] = (min_d, max_d)
-
-    # Extract start_date and end_date from session state
-    start_d, end_d = st.session_state["date_range"]
-
-    # Convert to datetime.date if they are Timestamps
-    if isinstance(start_d, pd.Timestamp):
-        pass
-    else:
-        start_d = pd.to_datetime(start_d)
-    if isinstance(end_d, pd.Timestamp):
-        pass
-    else:
-        end_d = pd.to_datetime(end_d)
-
-    # Clamp the start_date and end_date to the min and max dates
-    start_d = max(min_d, min(start_d, max_d))
-    end_d = max(min_d, min(end_d, max_d))
-
-    # Update session state with the clamped values
-    st.session_state["date_range"] = (start_d, end_d)
-
-    return start_d, end_d
-
-def scatterplot_caption(data, color_by, selected_language, llm):
+def scatterplot_caption(data: pd.DataFrame, color_by: str, selected_language: str, llm: ChatOpenAI) -> Iterator[BaseMessageChunk]:
     """
     Generates a caption for the scatter plot based on the filtered data and the color_by parameter.
+
+    This function performs the following steps:
+    1. Groups the data by 'sample_id', 'date', and the specified 'color_by' column, and sums the 'pcs/m' values.
+    2. Calculates the mean 'pcs/m' for each group specified by 'color_by'.
+    3. Sorts the grouped data by 'pcs/m' in descending order.
+    4. Extracts the minimum and maximum dates from the data.
+    5. Generates a summary of the 'pcs/m' values.
+    6. Retrieves the unique objects and cantons from the data.
+    7. Determines the feature type (lake, river, or both) based on the data.
+    8. Constructs a query using the prompts module to generate a caption for the scatter plot.
+    9. Sends the query to the language model (llm) to generate the caption.
+
+    Args:
+        data (pd.DataFrame): The filtered data containing survey results.
+        color_by (str): The column name to color the scatter plot by (e.g., 'canton', 'city', 'feature_name').
+        selected_language (str): The language selected by the user (e.g., 'English', 'French', 'German').
+        llm (ChatOpenAI): The language model instance used to generate the caption.
+
+    Returns:
+        Iterator: the stream of messages generated by the language model.
     """
     d = data.groupby(['sample_id', 'date', color_by], as_index=False)["pcs/m"].sum()
     grouped_data_mean = d.groupby([color_by], as_index=False)["pcs/m"].mean()
@@ -239,12 +138,24 @@ def scatterplot_caption(data, color_by, selected_language, llm):
 
     return llm.stream(scatterplot_message)
 
-def scatterplot(data, s_language, s_labels, color_by):
+
+def scatterplot(data: pd.DataFrame, s_language: str, s_labels: dict, color_by: str) -> px.scatter:
     """
     Creates a scatter plot.
-    - x-axis: date
-    - y-axis: pcs/m
-    - color: Selected feature (canton, city, or feature_name)
+
+    This function performs the following steps:
+    1. Groups the data by 'sample_id', the specified 'color_by' column, and 'date', and sums the 'pcs/m' values.
+    2. Generates a scatter plot using Plotly, with the x-axis as 'date', y-axis as 'pcs/m', and color by the specified feature.
+    3. Updates the plot's layout and appearance, including marker size, grid lines, and legend.
+
+    Args:
+        data (pd.DataFrame): The filtered data containing survey results.
+        s_language (str): The language selected by the user (e.g., 'English', 'French', 'German').
+        s_labels (dict): A dictionary containing labels for different languages.
+        color_by (str): The column name to color the scatter plot by (e.g., 'canton', 'city', 'feature_name').
+
+    Returns:
+        px.scatter: The generated Plotly scatter plot figure.
     """
     new_data = data.groupby(['sample_id', color_by, 'date'], as_index=False)['pcs/m'].sum()
     fig = px.scatter(
@@ -278,9 +189,27 @@ def scatterplot(data, s_language, s_labels, color_by):
     fig.update_xaxes(showgrid=True, gridwidth=.25, gridcolor='rgba(47, 79, 79, 0.5)')
     fig.update_yaxes(showgrid=True, gridwidth=.25, gridcolor='rgba(47, 79, 79, 0.5)')
     return fig
-
 def handle_grouped_data_for_barchart(data: pd.DataFrame, x_axis: str, y_axis: str) -> pd.DataFrame:
-    """Aggregates data for a barchart according to user requests and data type"""
+    """
+    Aggregates data for a bar chart according to user requests and data type.
+
+    This function performs the following steps:
+    1. Maps the x_axis to the appropriate column based on the selected language.
+    2. Groups the data by the specified x_axis and y_axis.
+    3. Aggregates the data based on the y_axis:
+        - If y_axis is 'number of samples', it counts unique 'sample_id' values.
+        - If y_axis is 'quantity', it sums the 'quantity' values.
+        - If y_axis is 'pcs/m', it calculates the mean 'pcs/m' values.
+    4. Sorts the grouped data in descending order by the y_axis.
+
+    Args:
+        data (pd.DataFrame): The filtered data containing survey results.
+        x_axis (str): The column name to group the data by (e.g., 'canton', 'city', 'feature_name', 'object').
+        y_axis (str): The column name to aggregate the data by (e.g., 'quantity', 'pcs/m', 'number of samples').
+
+    Returns:
+        pd.DataFrame: The aggregated data ready for plotting in a bar chart.
+    """
     print('Handling grouped data\n')
 
     description_column = language_column_map[st.session_state["language"]]
@@ -302,8 +231,25 @@ def handle_grouped_data_for_barchart(data: pd.DataFrame, x_axis: str, y_axis: st
 
     return grouped_data
 
-def barchart_caption(data, x_axis, y_axis, s_language, llm):
-    """Creates a narrative for a barchart given the data and the x and y axis labels"""
+def barchart_caption(data: pd.DataFrame, x_axis: str, y_axis: str, s_language: str, llm: ChatOpenAI) -> Iterator[BaseMessageChunk]:
+    """
+    Creates a narrative for a bar chart given the data and the x and y axis labels.
+
+    This function performs the following steps:
+    1. Aggregates the data for the bar chart using the `handle_grouped_data_for_barchart` function.
+    2. Constructs a query using the prompts module to generate a caption for the bar chart.
+    3. Sends the query to the language model (llm) to generate the caption.
+
+    Args:
+        data (pd.DataFrame): The filtered data containing survey results.
+        x_axis (str): The column name to group the data by (e.g., 'canton', 'city', 'feature_name', 'object').
+        y_axis (str): The column name to aggregate the data by (e.g., 'quantity', 'pcs/m', 'number of samples').
+        s_language (str): The language selected by the user (e.g., 'English', 'French', 'German').
+        llm (ChatOpenAI): The language model instance used to generate the caption.
+
+    Returns:
+        Iterator[BaseMessageChunk]: The stream of messages generated by the language model.
+    """
     grouped_data = handle_grouped_data_for_barchart(data, x_axis, y_axis)
     querry = prompts.barchart_prompt(data, grouped_data, x_axis, y_axis, s_language)
     barchart_message = [
@@ -315,17 +261,28 @@ def barchart_caption(data, x_axis, y_axis, s_language, llm):
 
     return aresponse
 
-def barchart(data, x_axis, y_axis):
+def barchart(data: pd.DataFrame, x_axis: str, y_axis: str) -> px.bar:
     """
     Creates a bar chart.
-    - x-axis: one of the following ["canton", "city", "feature_name", "object"]
-    - y-axis: one of the following ["quantity", "pcs/m", "number of samples"]
+
+    This function performs the following steps:
+    1. Aggregates the data for the bar chart using the `handle_grouped_data_for_barchart` function.
+    2. Generates a bar chart using Plotly, with the x-axis and y-axis specified by the user.
+    3. Updates the plot's layout and appearance, including margins, background color, font size, and legend.
+
+    Args:
+        data (pd.DataFrame): The filtered data containing survey results.
+        x_axis (str): The column name to group the data by (e.g., 'canton', 'city', 'feature_name', 'object').
+        y_axis (str): The column name to aggregate the data by (e.g., 'quantity', 'pcs/m', 'number of samples').
+
+    Returns:
+        px.bar: The generated Plotly bar chart figure.
     """
 
     grouped_data = handle_grouped_data_for_barchart(data, x_axis, y_axis)
     if x_axis == "object":
         # we are using the plain language description of the object
-        language_column_map = {"English": "en", "French": "fr", "German": "de"}
+        # language_column_map = {"English": "en", "French": "fr", "German": "de"}
         description_column = language_column_map[st.session_state["language"]]
         x_axis = description_column
 
@@ -350,8 +307,208 @@ def barchart(data, x_axis, y_axis):
     )
     return fig
 
-def apply_location_filters(data, selected_parameters):
-    """This applies location filters only and formats the date column"""
+def use_model(**kwargs) -> Union[ChatOpenAI, str]:
+    """
+    Initializes and returns a ChatOpenAI model instance based on the provided keyword arguments.
+
+    Parameters
+    ----------
+    **kwargs : dict
+        Keyword arguments to configure the ChatOpenAI model. Must include a 'name' key with the value 'openai'.
+
+    Returns
+    -------
+    ChatOpenAI
+        An instance of the ChatOpenAI model if 'name' is 'openai'.
+    str
+        A message indicating no model was found if 'name' is not 'openai'.
+    """
+    if kwargs.get('name') == 'openai':
+        kwargs.pop('name')
+        return ChatOpenAI(**kwargs)
+    else:
+        return "No model found"
+
+def use_labels(label: str, language: str = None) -> str:
+    """
+    Retrieves the label for the specified key in the selected language.
+
+    This function performs the following steps:
+    1. If the language is not provided, it defaults to the language stored in the session state.
+    2. Retrieves the label from the prompts module based on the provided key and language.
+
+    Args:
+        label (str): The key for the label to retrieve (e.g., 'shoreline_litter_assessment', 'summary').
+        language (str, optional): The language to retrieve the label in (e.g., 'English', 'French', 'German'). Defaults to the session state's language.
+
+    Returns:
+        str: The label in the specified language.
+    """
+    if language is None:
+        language = st.session_state['language']
+    return prompts.labels[label][language]
+
+def generate_reports(state: dict, code_groups: pd.DataFrame, material_spec: pd.DataFrame, data: pd.DataFrame) -> str:
+    """
+    Generates individual reports based on user selections and combines them into a rough draft.
+
+    This function performs the following steps:
+    1. Iterates through the selected cantons, cities, and feature names in the state.
+    2. For each selection, translates the state to metadata using `reporting_methods.translate_state_to_meta`.
+    3. Generates a baseline report and data using `reporting_methods.baseline_report_and_data`.
+    4. Appends each generated report to the reports list.
+    5. Combines all individual reports into a single string called the rough draft.
+
+    Args:
+        state (dict): The current state containing user selections for cantons, cities, and feature names.
+        code_groups (pd.DataFrame): DataFrame containing code groups information.
+        material_spec (pd.DataFrame): DataFrame containing material specifications.
+        data (pd.DataFrame): The filtered data containing survey results.
+
+    Returns:
+        str: The combined rough draft containing all individual reports.
+    """
+    reports = []
+
+    if len(state['canton']) > 0:
+        for location in state['canton']:
+            meta = reporting_methods.translate_state_to_meta(state, code_groups, location, "canton")
+            report = reporting_methods.baseline_report_and_data(meta, data, material_spec)
+            reports.append(report)
+
+    if len(state['city']) > 0:
+        for location in state['city']:
+            meta = reporting_methods.translate_state_to_meta(state, code_groups, location, "city")
+            report = reporting_methods.baseline_report_and_data(meta, data, code_material)
+            reports.append(report)
+
+    if len(state['feature_name']) > 0:
+        for location in state['feature_name']:
+            meta = reporting_methods.translate_state_to_meta(state, code_groups, location, None)
+            report = reporting_methods.baseline_report_and_data(meta, data, code_material)
+            reports.append(report)
+
+    return "\n".join(reports)
+
+def apply_filters() -> None:
+    """
+    Updates `f_data` based on the current selections in session state.
+    Uses OR logic for each selection and dynamically narrows down options.
+
+    This function is called when the user confirms the parameter selection.
+
+    This function performs the following steps:
+    1. Filters the data by canton, city, feature name, and feature type based on user selections.
+    2. Applies the date range filter to the data.
+    3. Updates the session state with the filtered data.
+    """
+
+    print("Applying filters\n")
+    s_data = st.session_state["survey_data"]  # Original unfiltered data
+    f_data = s_data.copy()
+    params = st.session_state['selected_parameters']
+
+    # Step 1: Filter by Canton
+    s_cantons = params["canton"]
+    if s_cantons:
+        f_data = f_data[f_data["canton"].isin(params['canton'])]
+
+    # Step 2: Filter by City
+    s_cities = params["city"]
+    if s_cities:
+        f_data = f_data[f_data["city"].isin(params['city'])]
+
+    # Step 3: Filter by Feature Name
+    s_feature_names = params["feature_name"]
+    if s_feature_names:
+        f_data = f_data[f_data["feature_name"].isin(s_feature_names)]
+
+    # Step 4: Filter by Feature Type
+    f_type = params["feature_type"]
+    if f_type != "both":
+        feature_code = "l" if f_type == "lake" else "r"
+        f_data = f_data[f_data["feature_type"] == feature_code]
+    s_codes = params['selected_objects']
+    if s_codes:
+        f_data = f_data[f_data['code'].isin(params['selected_objects'])]
+    date_range = st.session_state["date_range"]
+    if date_range:
+        mask = (f_data['date'] >= pd.Timestamp(date_range[0])) & (f_data['date'] <= pd.Timestamp(date_range[1]))
+        f_data = f_data[mask]
+
+    st.session_state["filtered_data"] = f_data.reset_index(drop=True)
+
+def clear_filters(data_from_cache: pd.DataFrame) -> None:
+    """
+    Clears all filters and reinitializes the session state.
+
+    This function performs the following steps:
+    1. Clears all session state variables.
+    2. Reinitializes the session state with the provided data from cache.
+
+    Args:
+        data_from_cache (pd.DataFrame): The data to reinitialize the session state with.
+    """
+    st.session_state.clear()
+
+    initialize_session_state(data_from_cache)
+
+def update_date_range(f_data: pd.DataFrame) -> tuple[pd.Timestamp, pd.Timestamp]:
+    """
+    Updates the min and max date range based on the filtered data.
+    Ensures all dates are consistently `pd.Timestamp` objects.
+
+    This function performs the following steps:
+    1. Calculates the minimum and maximum dates from the filtered data.
+    2. Ensures the date range exists in the session state.
+    3. Extracts and converts the start and end dates from the session state to `pd.Timestamp` if necessary.
+    4. Clamps the start and end dates to the minimum and maximum dates.
+    5. Updates the session state with the clamped date range.
+
+    Args:
+        f_data (pd.DataFrame): The filtered data containing survey results.
+
+    Returns:
+        tuple[pd.Timestamp, pd.Timestamp]: A tuple containing the clamped start and end dates.
+    """
+
+    min_d = f_data["date"].min()
+    max_d = f_data["date"].max()
+
+    if "date_range" not in st.session_state or len(st.session_state["date_range"]) != 2:
+        st.session_state["date_range"] = (min_d, max_d)
+
+    start_d, end_d = st.session_state["date_range"]
+
+    if isinstance(start_d, pd.Timestamp):
+        pass
+    else:
+        start_d = pd.to_datetime(start_d)
+    if isinstance(end_d, pd.Timestamp):
+        pass
+    else:
+        end_d = pd.to_datetime(end_d)
+
+    start_d = max(min_d, min(start_d, max_d))
+    end_d = max(min_d, min(end_d, max_d))
+
+    st.session_state["date_range"] = (start_d, end_d)
+
+    return start_d, end_d
+
+def apply_location_filters(data: pd.DataFrame, selected_parameters: dict) -> pd.DataFrame:
+    """
+    Applies location and date filters to the data and formats the date column.
+
+    This function is used when determining which objects are available. It filters the data based on the selected parameters for canton, city, feature name, and feature type. The date column is also formatted to `pd.Timestamp`.
+
+    Args:
+        data (pd.DataFrame): The data to be filtered.
+        selected_parameters (dict): The parameters for filtering, including canton, city, feature name, and feature type.
+
+    Returns:
+        pd.DataFrame: The filtered data with the date column formatted.
+    """
 
     if len(selected_parameters["canton"]) > 0:
         data = data[data["canton"].isin(selected_parameters["canton"])]
@@ -480,19 +637,21 @@ initialize_session_state(load_survey_data=load_survey_data)
 model_args_no_streaming = dict(name='openai', model="gpt-4o-mini", temperature=0.6, max_tokens=1000,
                                        streaming=False)
 model_args_streaming = dict(name='openai', model="gpt-4o-mini", temperature=0.6, max_tokens=1000)
-if 'language' not in st.session_state:
-    st.header("Shoreline litter assessment")
-else:
-    st.header(prompts.labels["shoreline_litter_assessment"][st.session_state['language']])
 language = st.radio(
     "", ["English", "French", "German"], index=0, horizontal=True, key="language"
 )
+if 'language' not in st.session_state:
+    st.markdown(prompts.report_assistant_text["English"])
+else:
+    st.markdown(prompts.report_assistant_text[st.session_state['language']]) #labels["shoreline_litter_assessment"][st.session_state['language']])
+
 st.markdown(prompts.labels["intro_one"][language])
 st.image("resources/goodimage.webp")
 st.markdown(prompts.labels["intro_two"][language])
 
 with st.expander(f"**{prompts.labels['whats_this'][language]}**", expanded=False):
-    st.markdown(prompts.labels["intro_content"][language])
+
+    st.markdown(prompts.data_info_text[language])
 
 st.markdown(prompts.labels["instruction_labels"][language])
 

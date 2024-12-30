@@ -52,8 +52,18 @@ table_border = {'selector': 'table, th, tr, td', 'props': 'border: 1px solid bla
 
 table_css_styles = [even_rows, odd_rows, table_font, header_row, table_data, table_border, table_caption_top]
 
-def extract_roughdraft_text(aresult):
-    """Utility tool for extracting text results from collections"""
+def extract_roughdraft_text(aresult: list[dict]) -> str:
+    """
+    Extracts text results from a collection of dictionaries.
+
+    This utility function iterates through a list of dictionaries, extracting the 'section_label' and 'section_description' from each dictionary's 'prompt' key. The extracted text is concatenated into a single string.
+
+    Args:
+        aresult (list[dict]): A list of dictionaries containing the text results to be extracted.
+
+    Returns:
+        str: A concatenated string of the extracted text results.
+    """
 
     rough = ''
     for theresult in aresult:
@@ -62,8 +72,19 @@ def extract_roughdraft_text(aresult):
         rough += label.capitalize() +'\n\n'+ description + '\n\n'
     return rough
 
-def clean_string(text):
-    """Removes accents special characters and spaces from a string"""
+def clean_string(text: str) -> str:
+    """
+    Removes accents, special characters, and spaces from a string.
+
+    This function normalizes the input string to decompose accents, removes accents by keeping only ASCII characters,
+    and removes special characters and spaces.
+
+    Args:
+        text (str): The input string to be cleaned.
+
+    Returns:
+        str: The cleaned string with accents, special characters, and spaces removed.
+    """
 
     # normalize to decompose accents
     text = unicodedata.normalize("NFD", text)
@@ -77,7 +98,35 @@ def clean_string(text):
     return text
 
 class ReportMeta(BaseModel):
-    """The meta-data needed to build a report"""
+    """
+    The `ReportMeta` class contains the metadata needed to create a baseline report for a subset of data.
+
+    Each report has an associated `ReportMeta` instance that defines the parameters for filtering and generating the report.
+
+    Attributes:
+        start (Optional[str]): The start of the requested date range, string date in format YYYY-mm, e.g., 2020-01.
+        end (Optional[str]): The end of the requested date range, string date in format YYYY-mm, e.g., 2020-01.
+        name (Optional[str]): The name of the directory where the report components will be stored.
+        report_codes (Optional[List[str]]): The objects of interest in OSPAR or JRC code, list of strings, e.g., ["G1", "G2"].
+        code_types (Optional[List[str]]): The use category of the objects, e.g., personal-hygiene, construction.
+        columns_of_interest (Optional[List[str]]): The feature columns for analysis, list of strings, e.g., ["column", "names"].
+        info_columns (Optional[List[str]]): The possible subsets in a report, list of strings, e.g., ["column", "names"].
+        feature_name (Optional[str]): The name of the lake or river if the report is about a lake or river.
+        feature_type (Optional[str]): Designates the report as either river, lake, or both.
+        boundary (Optional[str]): If the report is limited by administrative boundaries: canton, city, or survey area.
+        boundary_name (Optional[str]): The name of the canton, city, or survey area.
+        title_notes (Optional[str]): String for title notes.
+        code_group_category (Optional[str]): The family descriptive name of the objects under consideration.
+        roughdraft_name (Optional[str]): String for rough draft name.
+        report_subtitle (str): String for report subtitle.
+        author (str): The author of the report.
+        local_directory (Optional[str]): The parent directory of the reports.
+
+    Methods:
+        file_name: Defines the local directory for report components.
+        report_title: Builds the rough draft title from meta-data attributes.
+        get: Retrieve the value of an attribute by name.
+    """
 
     start: Optional[str] = Field(None,
                                  description="The start of the requested date range, string date in format YYYY-mm, e.g., 2020-01")
@@ -142,7 +191,6 @@ class ReportMeta(BaseModel):
             The value of the attribute or the default value if not found.
         """
         return getattr(self, attribute, default)
-
 class SurveyReport:
     """
     The SurveyReport class is a container for the data and methods that are used to generate a report from a survey data set.
@@ -151,38 +199,34 @@ class SurveyReport:
     charged with the responsibility of interpreting the data. This has not happened. Therefore, this report is the byproduct
     of the calculations necessary to forecast values.
 
-    Args
-    ----------
-    dfc : pd.DataFrame
-        The DataFrame containing the survey data.
+    Args:
+        dfc (pd.DataFrame): The DataFrame containing the survey data.
 
-    Methods
-    -------
-    administrative_boundaries() -> tuple[pd.DataFrame, dict[str, np.ndarray]]
-        Returns the name and number of unique Cantons and Cities in a report.
-    feature_inventory() -> tuple[pd.DataFrame, dict[str, np.ndarray]]
-        Returns the name and number of geographic boundaries in a report.
-    date_range() -> dict
-        The date range of the selected results.
-    inventory() -> pd.DataFrame
-        Returns the total quantity, median pcs/m, % of total and fail rate for each object code in the report.
-    total_quantity() -> int
-        Returns the total quantity of the report.
-    number_of_samples() -> int
-        Returns the number of unique sample_ids in the report.
-    number_of_locations() -> int
-        Returns the number of unique locations in the report.
-    material_report() -> pd.DataFrame
-        Generate a report on the material composition of the samples.
-    fail_rate(threshold: int = 1) -> pd.DataFrame
-        Calculate the fail rate for each object of interest.
-    sample_results(df: pd.DataFrame = None, sample_id: str = index_label, labels: str = location_label,
-                   info_columns: list[str] = None, afunc: dict = unit_agg) -> pd.DataFrame
-        Calculate the sample totals by grouping the data based on sample ID, labels, and date.
-    sampling_results_summary() -> pd.DataFrame
-        Generate a summary of the sample totals.
-    object_summary() -> pd.DataFrame
-        Generate a summary of the object quantities and fail rates.
+    Methods:
+        administrative_boundaries() -> list[dict]:
+            Returns the name and number of unique Cantons and Cities in a report.
+        feature_inventory() -> list[dict]:
+            Returns the name and number of geographic boundaries in a report.
+        date_range() -> dict:
+            The date range of the selected results.
+        inventory() -> pd.DataFrame:
+            Returns the total quantity, median pcs/m, % of total and fail rate for each object code in the report.
+        total_quantity() -> int:
+            Returns the total quantity of the report.
+        number_of_samples() -> int:
+            Returns the number of unique sample_ids in the report.
+        number_of_locations() -> int:
+            Returns the number of unique locations in the report.
+        material_report(code_material) -> list[dict]:
+            Generate a report on the material composition of the samples.
+        fail_rate(threshold: int = 1) -> pd.DataFrame:
+            Calculate the fail rate for each object of interest.
+        sample_results(df: pd.DataFrame = None, sample_id: str = None, labels: str = None, info_columns: list[str] = None, afunc: dict = None) -> pd.DataFrame:
+            Calculate the sample totals by grouping the data based on sample ID, labels, and date.
+        sampling_results_summary() -> list[dict]:
+            Generate a summary of the sample totals.
+        object_summary() -> list[dict]:
+            Generate a summary of the object quantities and fail rates.
     """
 
     def __init__(self, dfc):
@@ -196,17 +240,12 @@ class SurveyReport:
         This method calculates the number of unique Cantons and Cities in the survey data and returns a DataFrame
         with the counts and a dictionary with the names of the unique Cantons and Cities.
 
-        Returns
-        -------
-        tuple
-            A tuple containing:
-            - A DataFrame with the count of unique Cantons and Cities.
-            - A dictionary with the names of the unique Cantons and Cities.
+        Returns:
+            list[dict]: A list containing a dictionary with a DataFrame of the count of unique Cantons and Cities,
+                        and a dictionary with the names of the unique Cantons and Cities.
 
-        Raises
-        ------
-        ValueError
-            If the input DataFrame is empty.
+        Raises:
+            ValueError: If the input DataFrame is empty.
         """
         if self.df.empty:
             raise ValueError("The input DataFrame is empty. Please provide a valid DataFrame.")
@@ -222,11 +261,9 @@ class SurveyReport:
                 result[boundary] = {'count': len(names)}
         result = pd.DataFrame(result).T
 
-        # result = survey_report.administrative_boundaries()[0]
         result.loc['survey areas', 'count'] = result.loc['parent_boundary', 'count']
         result.drop('parent_boundary', inplace=True)
 
-        # d_names = survey_report.administrative_boundaries()[1]
         boundary_names['survey_area'] = boundary_names['parent_boundary']
         boundary_names.pop('parent_boundary')
         section_label = f"**Administrative boundaries**"
@@ -235,7 +272,7 @@ class SurveyReport:
         place_names = ""
         for a_label, a_list in boundary_names.items():
             if a_label != location_label:
-                place_names += f"{a_label.capitalize()}: {', '.join(a_list)}\n"
+                place_names += f"{a_label.capitalize()}: {', '.join(a_list)}\n\n"
         section_description = section_description + place_names
 
         return [{'dataframe': result, 'prompt': {'section_label': section_label, 'section_description': section_description}}]
@@ -247,17 +284,12 @@ class SurveyReport:
         This method calculates the number of unique geographic boundaries (e.g., river basins, lakes, parks) in the survey data
         and returns a DataFrame with the counts and a dictionary with the names of the unique features.
 
-        Returns
-        -------
-        List
-            containing:
-            - A DataFrame with the count of unique geographic boundaries.
-            - A plain text interpretation and label.
+        Returns:
+            list[dict]: A list containing a dictionary with a DataFrame of the count of unique geographic boundaries,
+                        and a dictionary with the names of the unique features.
 
-        Raises
-        ------
-        ValueError
-            If the input DataFrame is empty.
+        Raises:
+            ValueError: If the input DataFrame is empty.
         """
         if self.df.empty:
             raise ValueError("The input DataFrame is empty. Please provide a valid DataFrame.")
@@ -285,19 +317,26 @@ class SurveyReport:
         return [{'dataframe': result,
                  'prompt': {'section_label': section_label, 'section_description': section_description}}]
 
-
-
     @property
     def date_range(self) -> dict:
-        """The date range of the selected results"""
+        """
+        The date range of the selected results.
+
+        Returns:
+            dict: A dictionary with the start and end dates of the selected results.
+        """
         start = self.df['date'].min()
         end = self.df['date'].max()
         return {'start': start, 'end': end}
 
     def inventory(self) -> pd.DataFrame:
-        """Returns the total quantity, median pcs/m, % of total and fail rate for each object code in the report"""
+        """
+        Returns the total quantity, median pcs/m, % of total and fail rate for each object code in the report.
+
+        Returns:
+            pd.DataFrame: A DataFrame containing the total quantity, median pcs/m, % of total and fail rate for each object code.
+        """
         tq = self.total_quantity
-        # print(self.df.columns)
         object_totals = self.df.groupby([object_of_interest, 'en'], as_index=False).agg(agg_groups)
         object_totals['% of total'] = object_totals[Q] / tq
         object_totals.rename(columns={'en': 'object'}, inplace=True)
@@ -306,17 +345,32 @@ class SurveyReport:
 
     @property
     def total_quantity(self) -> int:
-        """Returns the total quantity of the report"""
+        """
+        Returns the total quantity of the report.
+
+        Returns:
+            int: The total quantity of the report.
+        """
         return self.df[Q].sum()
 
     @property
     def number_of_samples(self) -> int:
-        """Returns the number of unique sample_ids in the report"""
+        """
+        Returns the number of unique sample_ids in the report.
+
+        Returns:
+            int: The number of unique sample_ids in the report.
+        """
         return self.df['sample_id'].nunique()
 
     @property
     def number_of_locations(self) -> int:
-        """Returns the number of unique locations in the report"""
+        """
+        Returns the number of unique locations in the report.
+
+        Returns:
+            int: The number of unique locations in the report.
+        """
         return self.df.location.nunique()
 
     def material_report(self, code_material) -> list[dict]:
@@ -326,25 +380,21 @@ class SurveyReport:
         This method calculates the material composition of the samples in the survey data. It groups the data by material,
         calculates the total quantity for each material, and returns a DataFrame with the percentage of the total for each material.
 
-        Returns
-        -------
-        pd.DataFrame
-            A DataFrame containing the percentage of the total for each material.
+        Args:
+            code_material (pd.DataFrame): A DataFrame containing the material classification of the objects.
 
-        Raises
-        ------
-        ValueError
-            If the input DataFrame is empty.
+        Returns:
+            list[dict]: A list containing a dictionary with a DataFrame of the material composition,
+                        and a dictionary with the section label and description.
+
+        Raises:
+            ValueError: If the input DataFrame is empty.
         """
-
-        print("Getting inventory")
         if self.df.empty:
             raise ValueError("The input DataFrame is empty. Please provide a valid DataFrame.")
 
         inv = self.inventory()
-
         inv.set_index(object_of_interest, drop=True, inplace=True)
-
         inv = inv.merge(code_material, right_index=True, left_index=True)
 
         material_report = inv.groupby(['material']).quantity.sum()
@@ -357,8 +407,7 @@ class SurveyReport:
         section_description = "The proportion of each material type according to the material classification of the object\n\n"
         section_description = section_description + mr.to_markdown()
 
-        return [
-            {'dataframe': mr, 'prompt': {'section_label': section_label, 'section_description': section_description}}]
+        return [{'dataframe': mr, 'prompt': {'section_label': section_label, 'section_description': section_description}}]
 
     def fail_rate(self, threshold: int = 1) -> pd.DataFrame:
         """
@@ -368,20 +417,14 @@ class SurveyReport:
         number of samples where the quantity of the object is greater than or equal to the threshold, divided by the total
         number of samples for that object.
 
-        Parameters
-        ----------
-        threshold : int, optional
-            The quantity threshold to consider a sample as a fail. Default is 1.
+        Args:
+            threshold (int, optional): The quantity threshold to consider a sample as a fail. Default is 1.
 
-        Returns
-        -------
-        pd.DataFrame
-            A DataFrame containing the fail rate for each object of interest.
+        Returns:
+            pd.DataFrame: A DataFrame containing the fail rate for each object of interest.
 
-        Raises
-        ------
-        ValueError
-            If the input DataFrame is empty.
+        Raises:
+            ValueError: If the input DataFrame is empty.
         """
         if self.df.empty:
             raise ValueError("The input DataFrame is empty. Please provide a valid DataFrame.")
@@ -402,28 +445,18 @@ class SurveyReport:
         This function groups the data by sample ID, labels, and date, and applies the aggregation function to calculate
         the sample totals. If additional information columns are provided, they are included in the grouping.
 
-        Parameters
-        ----------
-        df : pd.DataFrame, optional
-            The DataFrame containing the survey data. If not provided, the method uses the instance's DataFrame. Default is None.
-        sample_id : str, optional
-            The column name representing the sample ID. Default is `index_label`.
-        labels : str, optional
-            The column name representing the location labels. Default is `location_label`.
-        info_columns : list of str, optional
-            Additional columns to include in the grouping. Default is None.
-        afunc : dict, optional
-            The aggregation function to apply to the grouped data. Default is `unit_agg`.
+        Args:
+            df (pd.DataFrame, optional): The DataFrame containing the survey data. If not provided, the method uses the instance's DataFrame. Default is None.
+            sample_id (str, optional): The column name representing the sample ID. Default is `index_label`.
+            labels (str, optional): The column name representing the location labels. Default is `location_label`.
+            info_columns (list[str], optional): Additional columns to include in the grouping. Default is None.
+            afunc (dict, optional): The aggregation function to apply to the grouped data. Default is `unit_agg`.
 
-        Returns
-        -------
-        pd.DataFrame
-            A DataFrame containing the aggregated sample totals.
+        Returns:
+            pd.DataFrame: A DataFrame containing the aggregated sample totals.
 
-        Raises
-        ------
-        ValueError
-            If the input DataFrame is empty.
+        Raises:
+            ValueError: If the input DataFrame is empty.
         """
         if df is None:
             df = self.df
@@ -450,15 +483,12 @@ class SurveyReport:
         This property calculates the summary of the sample totals, including total quantity, number of samples, average,
         quantiles, standard deviation, maximum value, and date range.
 
-        Returns
-        -------
-        pd.DataFrame
-            A DataFrame containing the summary of the sample totals.
+        Returns:
+            list[dict]: A list containing a dictionary with a DataFrame of the summary of the sample totals,
+                        and a dictionary with the section label and description.
 
-        Raises
-        ------
-        ValueError
-            If the input DataFrame is empty.
+        Raises:
+            ValueError: If the input DataFrame is empty.
         """
         if self.df.empty:
             raise ValueError("The input DataFrame is empty. Please provide a valid DataFrame.")
@@ -494,15 +524,12 @@ class SurveyReport:
         This method calculates the total quantity and fail rate for each object of interest in the survey data. It filters
         out objects with zero quantity, sorts the objects by quantity in descending order, and merges the fail rate data.
 
-        Returns
-        -------
-        pd.DataFrame
-            A DataFrame containing the summary of object quantities and fail rates.
+        Returns:
+            list[dict]: A list containing a dictionary with a DataFrame of the summary of object quantities and fail rates,
+                        and a dictionary with the section label and description.
 
-        Raises
-        ------
-        ValueError
-            If the input DataFrame is empty.
+        Raises:
+            ValueError: If the input DataFrame is empty.
         """
         if self.df.empty:
             raise ValueError("The input DataFrame is empty. Please provide a valid DataFrame.")
@@ -518,10 +545,21 @@ class SurveyReport:
         section_description = "The quantity, average density, % of total and fail rate per object category\n\n"
         section_description = section_description + df.to_markdown()
 
-        return [
-            {'dataframe': df, 'prompt': {'section_label': section_label, 'section_description': section_description}}]
+        return [{'dataframe': df, 'prompt': {'section_label': section_label, 'section_description': section_description}}]
 
-def survey_totals_boundary(survey_report, info_columns: list) -> dict:
+def survey_totals_boundary(survey_report: SurveyReport, info_columns: list) -> dict:
+    """
+    Generates a summary of sample results grouped by specified information columns.
+
+    This function groups the survey data by the specified information columns, calculates the total quantity and pcs/m for each group, and sorts the results in descending order of pcs/m. It also capitalizes string columns and generates a section label and description for the report.
+
+    Args:
+        survey_report (SurveyReport): An instance of `SurveyReport` containing the survey data.
+        info_columns (list): A list of column names to group the data by.
+
+    Returns:
+        dict: A dictionary containing the DataFrame of grouped sample results and a dictionary with the section label and description.
+    """
     d = survey_report.sample_results(info_columns=info_columns)
     dt = d.groupby(info_columns, as_index=False).agg(agg_groups)
     dt = dt.sort_values(Y, ascending=False)
@@ -539,6 +577,18 @@ def survey_totals_boundary(survey_report, info_columns: list) -> dict:
     return {'dataframe': d, 'prompt': {'section_label': section_label, 'section_description': section_description}}
 
 def survey_totals_for_all_info_cols(report_meta: ReportMeta, survey_report: SurveyReport) -> list[dict]:
+    """
+    Generates a summary of sample results for all specified information columns.
+
+    This function iterates through the information columns specified in the `ReportMeta` object, groups the survey data by each column, calculates the total quantity and pcs/m for each group, and generates a section label and description for the report.
+
+    Args:
+        report_meta (ReportMeta): An instance of `ReportMeta` containing the metadata for filtering and generating the report.
+        survey_report (SurveyReport): An instance of `SurveyReport` containing the survey data.
+
+    Returns:
+        list[dict]: A list of dictionaries, each containing a DataFrame of grouped sample results and a dictionary with the section label and description.
+    """
     if 'boundary' in report_meta:
         these_cols = [x for x in report_meta.info_columns if x != report_meta['boundary']]
     else:
@@ -592,21 +642,18 @@ def translate_state_to_meta(state: dict, code_groups: pd.DataFrame, location: st
 
     return ReportMeta(**meta)
 
-def filter_dataframe_with_reportmeta(report_meta: ReportMeta, data: pd.DataFrame):
+def filter_dataframe_with_reportmeta(report_meta: ReportMeta, data: pd.DataFrame) -> pd.DataFrame:
     """
-    Filters the DataFrame based on the conditions provided in report_meta.
+    Filters the DataFrame based on the conditions provided in the `ReportMeta` object.
 
-    Parameters
-    ----------
-    report_meta : dict
-        Dictionary containing the filtering criteria.
-    data : pd.DataFrame
-        The application state containing the DataFrame to filter.
+    This function applies various filters to the survey data based on the metadata provided in the `ReportMeta` object.
 
-    Returns
-    -------
-    pd.DataFrame
-        The filtered DataFrame.
+    Args:
+        report_meta (ReportMeta): An instance of `ReportMeta` containing the metadata for filtering the data.
+        data (pd.DataFrame): The DataFrame containing the survey data.
+
+    Returns:
+        pd.DataFrame: The filtered DataFrame.
     """
     f_data = data.copy()
 
@@ -636,8 +683,20 @@ def filter_dataframe_with_reportmeta(report_meta: ReportMeta, data: pd.DataFrame
 
     return f_data
 
-def baseline_report_and_data(report_meta: ReportMeta, data, material_spec):
-    """Produces a rough draft report from the survey data and report meta-data"""
+def baseline_report_and_data(report_meta: ReportMeta, data: pd.DataFrame, material_spec: pd.DataFrame) -> str:
+    """
+    Produces a rough draft report from the survey data and report meta-data.
+
+    This function filters the survey data based on the conditions provided in the `ReportMeta` object, generates various sections of the report, and concatenates them into a rough draft report.
+
+    Args:
+        report_meta (ReportMeta): An instance of `ReportMeta` containing the metadata for filtering and generating the report.
+        data (pd.DataFrame): The DataFrame containing the survey data.
+        material_spec (pd.DataFrame): A DataFrame containing the material classification of the objects.
+
+    Returns:
+        str: A concatenated string representing the rough draft report.
+    """
 
     df = filter_dataframe_with_reportmeta(report_meta, data)
     survey_report = SurveyReport(df)

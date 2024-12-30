@@ -1,4 +1,7 @@
 language_column_map = {"English": "en", "French": "fr", "German": "de"}
+
+iqaasl = "https://hammerdirt-analyst.github.io/IQAASL-End-0f-Sampling-2021/"
+bafu_theme = "https://www.bafu.admin.ch/bafu/en/home/topics/waste/dossiers/waste-along-swiss-rivers-and-lakes.html"
 def abstract_prompt(language, feature_type, objects, cantons):
     """Prompt for the abstract generation task."""
 
@@ -24,9 +27,9 @@ def abstract_prompt(language, feature_type, objects, cantons):
         " The fail rate is the rate at which we expect to find at least one of the objects at a survey.",
         " From the summary statistics include The total number (quantity) of objects, the number of samples",
         " (summary statistics) and start and end date of samples should also be mentioned.",
-        " The objects in the report are selected by the client. The report is about those objects and nothing more."
-        " You must answer in paragraph form, limit your response to two paragraphs.\n\nThis is an abstract for a"
-        " professional document. It should sound like one. We do not need any general closing statements. Your abstract"
+        " The objects in the report are selected by the client. The report is about those objects and nothing more.",
+        " You must answer in paragraph form, limit your response to two paragraphs.\n\nThis is an abstract for a",
+        " professional document. We do not need any general closing comments.",
         f" only concerns the contents of the report.\n\nPlease reply in the following language: {language}."
     )
     return ''.join(aprompt)
@@ -47,16 +50,16 @@ def scatterplot_prompt(start, end, interval, group_mean, objects, color, feature
     prompt = (
         f"You are a data scientist. You are writing the description of the data from a scatterplot. The data is  from"
         f" observations of {objects} found along {lakes_or_rivers} in {', '.join(cantons)}. The data has been selected by the client."
-        " These observations are given in total pieces per meter per sample. A sample is defined by a location and a date",
+        " These observations are given in pieces of trash per meter per sample. A sample is defined by a location and a date",
         ". Your task is to summarize the data in the plot AND identify any important features in the data.",
         " The plot characteristics are as follows::\n\n1. x axis: date of the sample\n2. y axis: pieces per meter, the sum of all",
         f" the objects found divided by the length of the shoreline that was surveyed.\n3. groups: {color} the regional aggregation",
         f" of the surveys.\n4. x axis start date {start}, x axis end date {end}\n5. y axis 90% interval: {interval}\n\n",
         f"The results by groups are as follows: {group_mean}\n\n.",
         "Your summary must be brief and to the point. The client has an image of the plot and your summary is to help them understand.",
-        " Your audience is professional and they know how to read a scatterplot. Your summary should be about the data and not the plot."
+        " Your audience is professional and they know how to read a scatterplot. Your summary should be about the data."
         " You must answer in paragraph form in a concise and factual manner. Limit your response to two paragraphs. No titles or labels are wanted.\n\n",
-        f"Your answer must be in the following language: {language}."
+        f"No general statements or closing comments are requested. Your answer must be in the following language: {language}."
     )
 
     return ''.join(prompt)
@@ -86,8 +89,8 @@ def barchart_prompt(data, grouped_data, x_axis, y_axis, language):
         " number of objects found by x-axis category. pcs/m refers to the average number of objects observed per meter of shoreline."
         " number of samples refers to the number of times that samples were taken per xaxis category. Or you could say number of trips to the beach\n\n"
         f" the data used to create the chart is below:\n\n{grouped_data.to_markdown()}\n\n",
-        "Identify the min and max values in the charts. Identify or define the xlabels provide details. summary must be brief"
-        " and to the point. The client has an image of the plot and your summary is to help them understand.",
+        "Identify the min and max values in the charts. Identify or define the x labels provide details."
+        " The client has an image of the plot and your summary is to help them understand.",
         " Your audience is professional and they know how to read a barplot. Your summary should be about the data. Further analysis"
         " is not needed. You must answer in paragraph form in a concise and factual manner.\n\n",
         f"Your answer must be in the following language: {language}."
@@ -125,6 +128,84 @@ def reporter_prompt(summary, scatterplot, barchart, inventory, rough_draft):
 
 # labels
 
+report_assistant_text = {
+    "English": (
+        "### The Report Assistant\n\n"
+        "The report assistant is a supplement to the 2022 Swiss Federal Report on Trash Density [IQAASL End of Sampling 2021]({iqaasl}). "
+        "It is an accompaniment to the theme [waste along lakes and rivers]({bafu_theme}). "
+        "The assistant helps stakeholders generate customized reports quickly. "
+        "Reports can be tailored to specific needs, whether for a municipality, lake, or canton.\n\n"
+        "By leveraging large language models (LLMs), it enables interactive data exploration. "
+        "Stakeholders can explore, filter, and analyze data interactively. "
+        "They can ask questions and receive clear, contextual explanations of the output. "
+        "This empowers stakeholders to make informed decisions based on observed conditions."
+    ),
+    "French": (
+        "### L'Assistant de Rapport\n\n"
+        "L'assistant de rapport est un complément au Rapport fédéral suisse 2022 sur la densité des déchets [IQAASL End of Sampling 2021]({iqaasl}). "
+        "Il est un accompagnement au thème [les déchets le long des lacs et des rivières]({bafu_theme}). "
+        "L'assistant aide les partenairesà générer rapidement des rapports personnalisés. "
+        "Les rapports peuvent être adaptés à des besoins spécifiques, qu'il s'agisse d'une municipalité, d'un lac ou d'un canton.\n\n"
+        "En exploitant des modèles de langage avancés (LLMs), il permet une exploration interactive des données. "
+        "Les partenairespeuvent explorer, filtrer et analyser les données de manière interactive. "
+        "Elles peuvent poser des questions et recevoir des explications contextuelles claires sur les résultats. "
+        "Cela permet aux partenairesde prendre des décisions éclairées basées sur les conditions observées."
+    ),
+    "German": (
+        "### Der Berichtsassistent\n\n"
+        "Der Berichtsassistent ist eine Ergänzung zum Schweizerischen Bundesbericht 2022 über die Abfalldichte [IQAASL End of Sampling 2021]({iqaasl}). "
+        "Er ist eine Begleitung zum Thema [Abfälle entlang von Seen und Flüssen]({bafu_theme}). "
+        "Der Assistent hilft Stakeholdern, schnell maßgeschneiderte Berichte zu erstellen. "
+        "Berichte können auf spezifische Bedürfnisse zugeschnitten werden, sei es für eine Gemeinde, einen See oder einen Kanton.\n\n"
+        "Durch den Einsatz großer Sprachmodelle (LLMs) ermöglicht er eine interaktive Datenexploration. "
+        "Stakeholder können Daten interaktiv erkunden, filtern und analysieren. "
+        "Sie können Fragen stellen und klare, kontextbezogene Erklärungen zu den Ergebnissen erhalten. "
+        "Dies ermöglicht es Stakeholdern, fundierte Entscheidungen auf der Grundlage beobachteter Bedingungen zu treffen."
+    )
+}
+
+data_info_text = {
+    "English": (
+        "**Where does the data come from?** The data was collected by volunteers and experts from NGOs all over Switzerland.\n\n"
+        "Collecting data is simple, go to the beach, walk along the water and count and identify the man-made objects you find.\n\n"
+        "**Based on field experience**, this app is built on methodologies and insights from the following works:\n\n"
+        "- [IQAASL End of Sampling 2021](https://hammerdirt-analyst.github.io/IQAASL-End-0f-Sampling-2021/)\n"
+        "- [Solid Waste Team](https://hammerdirt-analyst.github.io/solid-waste-team/titlepage.html)\n"
+        "- [Land Use](https://hammerdirt-analyst.github.io/landuse/titlepage.html)\n"
+        "- [Plastock](https://associationsauvegardeleman.github.io/plastock/)\n"
+        "- [Finding One Object](https://hammerdirt-analyst.github.io/finding-one-object/titlepage.html)\n\n"
+        "**Open Source and Transparent**\n\n"
+        "The app's source code, data, and documentation are available for review and collaboration:\n"
+        "[Explore the documentation and source code here](https://hammerdirt-analyst.github.io/feb_2024/titlepage.html#).\n\n"
+    ),
+    "French": (
+        "**D'où viennent les données?** Les données ont été collectées par des bénévoles et des experts d'ONG partout en Suisse.\n\n"
+        "Collecter des données est simple, rendez-vous sur une plage, marchez le long de l'eau et comptez et identifiez les objets fabriqués par l'homme que vous trouvez.\n\n"
+        "**Basé sur l'expérience de terrain**, cette application est basée sur des méthodologies et des idées issues des travaux suivants:\n\n"
+        "- [IQAASL End of Sampling 2021](https://hammerdirt-analyst.github.io/IQAASL-End-0f-Sampling-2021/)\n"
+        "- [Solid Waste Team](https://hammerdirt-analyst.github.io/solid-waste-team/titlepage.html)\n"
+        "- [Land Use](https://hammerdirt-analyst.github.io/landuse/titlepage.html)\n"
+        "- [Plastock](https://associationsauvegardeleman.github.io/plastock/)\n"
+        "- [Finding One Object](https://hammerdirt-analyst.github.io/finding-one-object/titlepage.html)\n\n"
+        "**Source ouverte et transparente**\n\n"
+        "Le code source, les données et la documentation de l'application sont disponibles pour examen et collaboration:\n"
+        "[Explorez la documentation et le code source ici](https://hammerdirt-analyst.github.io/feb_2024/titlepage.html#).\n\n"
+    ),
+    "German": (
+        "**Woher stammen die Daten?** Die Daten wurden von Freiwilligen und Experten von NGOs aus der ganzen Schweiz gesammelt.\n\n"
+        "Das Sammeln von Daten ist einfach: Gehen Sie an den Strand, laufen Sie am Wasser entlang und zählen und identifizieren Sie die von Menschen hergestellten Objekte, die Sie finden.\n\n"
+        "**Basierend auf Felderfahrungen**, diese App basiert auf Methoden und Erkenntnissen aus den folgenden Arbeiten:\n\n"
+        "- [IQAASL End of Sampling 2021](https://hammerdirt-analyst.github.io/IQAASL-End-0f-Sampling-2021/)\n"
+        "- [Solid Waste Team](https://hammerdirt-analyst.github.io/solid-waste-team/titlepage.html)\n"
+        "- [Land Use](https://hammerdirt-analyst.github.io/landuse/titlepage.html)\n"
+        "- [Plastock](https://associationsauvegardeleman.github.io/plastock/)\n"
+        "- [Finding One Object](https://hammerdirt-analyst.github.io/finding-one-object/titlepage.html)\n\n"
+        "**Offen und Transparent**\n\n"
+        "Der Quellcode, die Daten und die Dokumentation der App sind zur Überprüfung und Zusammenarbeit verfügbar:\n"
+        "[Entdecken Sie die Dokumentation und den Quellcode hier](https://hammerdirt-analyst.github.io/feb_2024/titlepage.html#).\n\n"
+    )
+}
+
 intro_one = {
     "English": """
     This is an application of large language models (LLMs) and machine learning to provide summary reports of volunteer observations of marine litter using the OSPAR, JRC, or NOAA methods for counting beach litter.
@@ -136,7 +217,6 @@ intro_one = {
     Dies ist eine Anwendung großer Sprachmodelle (LLMs) und maschinellen Lernens, um zusammenfassende Berichte über die Beobachtungen von Freiwilligen zu Meeresmüll zu erstellen, basierend auf den OSPAR-, JRC- oder NOAA-Methoden zur Erfassung von Strandmüll.
     """
 }
-
 intro_two = {
     "English": """
     The inspiration for this is the millions of people each year throughout the world who spend the time to collect the data.
@@ -147,131 +227,9 @@ intro_two = {
     "German": """
     Die Inspiration dafür sind die Millionen von Menschen weltweit, die jedes Jahr Zeit investieren, um die Daten zu sammeln.
     """}
-intro_content = {
-    "English": """
-### The Report Assistant
-As a supplement to the 2022 Swiss Federal Report on Trash Density [IQAASL End of Sampling 2021](https://hammerdirt-analyst.github.io/IQAASL-End-0f-Sampling-2021/), this assistant bridges the gap between static publications and dynamic, query-driven analysis. It offers the flexibility and depth needed to address questions and insights that couldn’t be covered in traditional reports.
 
-The assistant helps stakeholders generate customized reports quickly, tailored to their specific needs—whether for a community, lake, or canton. By leveraging advanced language models (LLMs), it enables you to explore, filter, and analyze data interactively. Stakeholders can ask questions and receive clear, contextual explanations of the output, empowering them to make informed decisions.
 
-**Based on field experience**  
-This app is built on methodologies and insights from the following works:
-- [IQAASL End of Sampling 2021](https://hammerdirt-analyst.github.io/IQAASL-End-0f-Sampling-2021/)  
-- [Solid Waste Team](https://hammerdirt-analyst.github.io/solid-waste-team/titlepage.html)  
-- [Land Use](https://hammerdirt-analyst.github.io/landuse/titlepage.html)  
-- [Plastock](https://associationsauvegardeleman.github.io/plastock/)  
-- [Finding One Object](https://hammerdirt-analyst.github.io/finding-one-object/titlepage.html)  
 
-**Open Source and Transparent**  
-The app's source code, data, and documentation are available for review and collaboration:  
-[Explore the documentation and source code here](https://hammerdirt-analyst.github.io/feb_2024/titlepage.html#).
-""",
-    "French": """
-### L'assistant de rapport
-En complément du Rapport fédéral suisse 2022 sur la densité des déchets [IQAASL End of Sampling 2021](https://hammerdirt-analyst.github.io/IQAASL-End-0f-Sampling-2021/), cet assistant comble le fossé entre les publications statiques et les analyses dynamiques basées sur des requêtes. Il offre la flexibilité et la profondeur nécessaires pour aborder des questions et des idées qui ne pouvaient être couvertes dans les rapports traditionnels.
-
-L'assistant aide les parties prenantes à générer rapidement des rapports personnalisés, adaptés à leurs besoins spécifiques—qu'il s'agisse d'une communauté, d'un lac ou d'un canton. En exploitant des modèles de langage avancés (LLMs), il permet d'explorer, de filtrer et d'analyser les données de manière interactive. Les parties prenantes peuvent poser des questions et recevoir des explications contextuelles claires sur les résultats, leur permettant de prendre des décisions éclairées.
-
-**Basé sur l'expérience de terrain**  
-Cette application est basée sur des méthodologies et des idées issues des travaux suivants :  
-- [IQAASL End of Sampling 2021](https://hammerdirt-analyst.github.io/IQAASL-End-0f-Sampling-2021/)  
-- [Solid Waste Team](https://hammerdirt-analyst.github.io/solid-waste-team/titlepage.html)  
-- [Land Use](https://hammerdirt-analyst.github.io/landuse/titlepage.html)  
-- [Plastock](https://associationsauvegardeleman.github.io/plastock/)  
-- [Finding One Object](https://hammerdirt-analyst.github.io/finding-one-object/titlepage.html)  
-
-**Source ouverte et transparente**  
-Le code source, les données et la documentation de l'application sont disponibles pour examen et collaboration :  
-[Explorez la documentation et le code source ici](https://hammerdirt-analyst.github.io/feb_2024/titlepage.html#).
-""",
-    "German": """
-### Der Berichtsassistent
-Als Ergänzung zum Schweizerischen Bundesbericht 2022 über die Abfalldichte [IQAASL End of Sampling 2021](https://hammerdirt-analyst.github.io/IQAASL-End-0f-Sampling-2021/) überbrückt dieser Assistent die Lücke zwischen statischen Veröffentlichungen und dynamischen, abfragegesteuerten Analysen. Er bietet die Flexibilität und Tiefe, die erforderlich sind, um Fragen und Erkenntnisse zu bearbeiten, die in traditionellen Berichten nicht behandelt werden konnten.
-
-Der Assistent hilft Stakeholdern, schnell maßgeschneiderte Berichte zu erstellen, die auf ihre spezifischen Bedürfnisse zugeschnitten sind—sei es für eine Gemeinde, einen See oder einen Kanton. Durch den Einsatz fortschrittlicher Sprachmodelle (LLMs) ermöglicht er es, Daten interaktiv zu erkunden, zu filtern und zu analysieren. Stakeholder können Fragen stellen und klare, kontextbezogene Erklärungen zu den Ergebnissen erhalten, um fundierte Entscheidungen zu treffen.
-
-**Basierend auf Felderfahrungen**  
-Diese App basiert auf Methoden und Erkenntnissen aus den folgenden Arbeiten:  
-- [IQAASL End of Sampling 2021](https://hammerdirt-analyst.github.io/IQAASL-End-0f-Sampling-2021/)  
-- [Solid Waste Team](https://hammerdirt-analyst.github.io/solid-waste-team/titlepage.html)  
-- [Land Use](https://hammerdirt-analyst.github.io/landuse/titlepage.html)  
-- [Plastock](https://associationsauvegardeleman.github.io/plastock/)  
-- [Finding One Object](https://hammerdirt-analyst.github.io/finding-one-object/titlepage.html)  
-
-**Offen und Transparent**  
-Der Quellcode, die Daten und die Dokumentation der App sind zur Überprüfung und Zusammenarbeit verfügbar:  
-[Entdecken Sie hier die Dokumentation und den Quellcode](https://hammerdirt-analyst.github.io/feb_2024/titlepage.html#).
-"""
-}
-
-# intro_content = {
-#     "English": """
-#     **Welcome to the Swiss Litter Monitoring App!**
-#
-#     This app is designed to help stakeholders understand and analyze the types and quantities of litter found along rivers and lakes across Switzerland. By leveraging volunteer-collected data and established guidelines for monitoring marine litter in European seas, the app provides an insightful and comprehensive tool for tackling solid waste issues in these environments.
-#
-#     **Key Features:**
-#     - Comprehensive Data Access: Explore all monitoring data collected since 2015.
-#     - Insights and Reporting: Prepare detailed reports and consolidate volunteer observations.
-#     - Community Collaboration: Benefit from the work of dedicated volunteers.
-#
-#     **Based on Proven Research:**
-#     This app is built on methodologies and insights from the following works:
-#     - [IQAASL End of Sampling 2021](https://hammerdirt-analyst.github.io/IQAASL-End-0f-Sampling-2021/)
-#     - [Solid Waste Team](https://hammerdirt-analyst.github.io/solid-waste-team/titlepage.html)
-#     - [Land Use](https://hammerdirt-analyst.github.io/landuse/titlepage.html)
-#     - [Plastock](https://associationsauvegardeleman.github.io/plastock/)
-#     - [Finding One Object](https://hammerdirt-analyst.github.io/finding-one-object/titlepage.html)
-#
-#     **Open Source and Transparent:**
-#     The app's source code, data, and documentation are available for review and collaboration:
-#     [Explore the documentation and source code here](https://hammerdirt-analyst.github.io/feb_2024/titlepage.html#).
-#     """,
-#     "French": """
-#     **Bienvenue dans l'application Swiss Litter Monitoring!**
-#
-#     Cette application est conçue pour aider les parties prenantes à comprendre et analyser les types et quantités de déchets trouvés le long des rivières et des lacs en Suisse. En s'appuyant sur des données collectées par des volontaires et des lignes directrices établies pour surveiller les déchets marins dans les mers européennes, l'application fournit un outil précieux et complet pour faire face aux problèmes de déchets solides dans ces environnements.
-#
-#     **Principales caractéristiques :**
-#     - Accès complet aux données : Explorez toutes les données collectées depuis 2015.
-#     - Informations et rapports : Préparez des rapports détaillés et consolidez les observations des volontaires.
-#     - Collaboration communautaire : Profitez du travail de bénévoles dévoués.
-#
-#     **Basé sur des recherches éprouvées :**
-#     Cette application repose sur des méthodologies et des informations provenant des travaux suivants :
-#     - [IQAASL End of Sampling 2021](https://hammerdirt-analyst.github.io/IQAASL-End-0f-Sampling-2021/)
-#     - [Solid Waste Team](https://hammerdirt-analyst.github.io/solid-waste-team/titlepage.html)
-#     - [Land Use](https://hammerdirt-analyst.github.io/landuse/titlepage.html)
-#     - [Plastock](https://associationsauvegardeleman.github.io/plastock/)
-#     - [Finding One Object](https://hammerdirt-analyst.github.io/finding-one-object/titlepage.html)
-#
-#     **Source ouverte et transparente :**
-#     Le code source, les données et la documentation de l'application sont disponibles pour consultation et collaboration :
-#     [Explorez la documentation et le code source ici](https://hammerdirt-analyst.github.io/feb_2024/titlepage.html#).
-#     """,
-#     "German": """
-#     **Willkommen in der Swiss Litter Monitoring App!**
-#
-#     Diese App soll Interessengruppen dabei helfen, die Arten und Mengen von Abfall zu verstehen und zu analysieren, die entlang von Flüssen und Seen in der Schweiz gefunden werden. Durch die Nutzung von von Freiwilligen gesammelten Daten und etablierten Richtlinien zur Überwachung von Meeresmüll in europäischen Gewässern bietet die App ein wertvolles und umfassendes Werkzeug zur Bewältigung von Problemen mit festen Abfällen in diesen Umgebungen.
-#
-#     **Hauptmerkmale:**
-#     - Umfassender Datenzugriff: Erkunden Sie alle seit 2015 gesammelten Überwachungsdaten.
-#     - Einblicke und Berichte: Erstellen Sie detaillierte Berichte und konsolidieren Sie Beobachtungen von Freiwilligen.
-#     - Gemeinschaftliche Zusammenarbeit: Profitieren Sie von der Arbeit engagierter Freiwilliger.
-#
-#     **Basierend auf bewährter Forschung:**
-#     Diese App basiert auf Methoden und Erkenntnissen aus den folgenden Arbeiten:
-#     - [IQAASL End of Sampling 2021](https://hammerdirt-analyst.github.io/IQAASL-End-0f-Sampling-2021/)
-#     - [Solid Waste Team](https://hammerdirt-analyst.github.io/solid-waste-team/titlepage.html)
-#     - [Land Use](https://hammerdirt-analyst.github.io/landuse/titlepage.html)
-#     - [Plastock](https://associationsauvegardeleman.github.io/plastock/)
-#     - [Finding One Object](https://hammerdirt-analyst.github.io/finding-one-object/titlepage.html)
-#
-#     **Offen und transparent:**
-#     Der Quellcode, die Daten und die Dokumentation der App sind zur Überprüfung und Zusammenarbeit verfügbar:
-#     [Entdecken Sie hier die Dokumentation und den Quellcode](https://hammerdirt-analyst.github.io/feb_2024/titlepage.html#).
-#     """
-# }
 
 English_instructions = (
     "Make a summary of data and select chart contents.\n\n"
@@ -404,10 +362,10 @@ labels = {
         "French": "Paramètres sélectionnés",
         "German": "Ausgewählte Parameter"
     },
-    "whats_this": {
-        "English": "What's this?",
-        "French": "Qu'est-ce que c'est ?",
-        "German": "Was ist das?"
+    "whats_this":{
+        "English": "Some background information",
+        "French": "Quelques informations générales",
+        "German": "Einige Hintergrundinformationen"
     },
     "parameter_selection": {
         "English": "Parameter Selection",
@@ -583,7 +541,6 @@ labels = {
     },
     "intro_one": intro_one,
     "intro_two": intro_two,
-    "intro_content": intro_content,
     "instruction_labels": {
         "English": English_instructions,
         "French": French_instructions,

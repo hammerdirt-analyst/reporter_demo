@@ -174,7 +174,10 @@ class ReportMeta(BaseModel):
     def report_title(self) -> Optional[str]:
         """Builds the rough draft title from meta-data attributes"""
 
-        if self.name and self.code_group_category:
+        if self.name and self.boundary:
+            aname = self.name.capitalize()
+            return f'{aname} {self.boundary}'
+        elif self.name and not self.boundary and self.feature_type:
             aname = self.name.capitalize()
             return f'{aname} {self.feature_type}'
         else:
@@ -396,9 +399,14 @@ class SurveyReport:
         inv = self.inventory()
         inv.set_index(object_of_interest, drop=True, inplace=True)
         inv = inv.merge(code_material, right_index=True, left_index=True)
-
-        material_report = inv.groupby(['material']).quantity.sum()
-        mr = material_report / sum(material_report)
+        print('this is an m report\n')
+        m_report = inv.groupby(['material']).quantity.sum()
+        if sum(m_report) > 0:
+            mr = m_report / sum(m_report)
+        else:
+            mr = m_report
+        print('this is an mr\n')
+        print(mr)
         mr = (mr * 100).astype(int)
         mr = pd.DataFrame(mr[mr >= 1])
         mr['% of total'] = mr.quantity.apply(lambda x: f'{x}%')
@@ -634,11 +642,11 @@ def translate_state_to_meta(state: dict, code_groups: pd.DataFrame, location: st
         "columns_of_interest": feature_variables
     }
 
-    meta['report_title'] = f"{meta['name']} {meta['feature_type']}"
-    meta['report_subtitle'] = f"Codes: {meta['code_group_category']}"
+    meta['report_title'] = f"{meta['name']} {boundary}"
+    meta['report_subtitle'] = f"Lake, river or park: {meta['feature_type']}"
     meta['title_notes'] = "Proof of concept AI assisted reporting"
     meta['author'] = "hammerdirt analyst"
-    meta['code_types'] = code_groups.loc[meta['report_codes']].groupname.unique().tolist()
+    meta['code_types'] = code_groups.loc[meta['report_codes']].groupname.unique()
 
     return ReportMeta(**meta)
 
@@ -656,6 +664,8 @@ def filter_dataframe_with_reportmeta(report_meta: ReportMeta, data: pd.DataFrame
         pd.DataFrame: The filtered DataFrame.
     """
     f_data = data.copy()
+    print('\nfiltering data with report meta\n')
+    print(report_meta)
 
     if report_meta.get('start'):
         f_data = f_data[f_data['date'] >= f"{report_meta.start}"]
@@ -669,10 +679,10 @@ def filter_dataframe_with_reportmeta(report_meta: ReportMeta, data: pd.DataFrame
         f_data = f_data[f_data[boundary] == boundary_name]
 
     if report_meta.get('feature_type'):
-        if report_meta.feature_type == 'lake':
-            f_data = f_data[f_data['feature_type'] == 'l']
-        elif report_meta.feature_type == 'river':
-            f_data = f_data[f_data['feature_type'] == 'r']
+        if report_meta.feature_type == 'both':
+            pass
+        else:
+            f_data = f_data[f_data['feature_type'] == report_meta.feature_type]
 
     if report_meta.get('feature_name'):
         f_data = f_data[f_data['feature_name'] == report_meta.feature_name]
@@ -697,8 +707,18 @@ def baseline_report_and_data(report_meta: ReportMeta, data: pd.DataFrame, materi
     Returns:
         str: A concatenated string representing the rough draft report.
     """
+    # report title section
+    print(report_meta.boundary)
+    title = "## " + report_meta.report_title + "\n"
+    objectsoi = "**Objects:** " + ', '.join(report_meta.code_types) + "\n\n"
+    notes = "**Notes:** " + report_meta.title_notes + "\n\n"
+    author = "**Author:** " + report_meta.author + "\n\n"
+    intro = f'{title}{objectsoi}{notes}{author}'
 
     df = filter_dataframe_with_reportmeta(report_meta, data)
+    if df.empty:
+
+        return intro + "No data available for the specified conditions."
     survey_report = SurveyReport(df)
     # baseline report sections
     admin_boundaries = extract_roughdraft_text(survey_report.administrative_boundaries())
@@ -708,12 +728,7 @@ def baseline_report_and_data(report_meta: ReportMeta, data: pd.DataFrame, materi
     survey_totals = extract_roughdraft_text(survey_totals_for_all_info_cols(report_meta, survey_report))
     inventory = extract_roughdraft_text(survey_report.object_summary())
 
-    # report title section
-    title = "## " + report_meta.report_title + "\n"
-    objectsoi = "**Objects:** " + ', '.join(report_meta.code_types) + "\n\n"
-    notes = "**Notes:** " + report_meta.title_notes + "\n\n"
-    author = "**Author:** " + report_meta.author + "\n\n"
-    intro = f'{title}{objectsoi}{notes}{author}'
+
 
     # individual sections
     for section in [summary_stats, admin_boundaries, features, materials, survey_totals, inventory]:

@@ -372,19 +372,19 @@ def generate_reports(state: dict, code_groups: pd.DataFrame, material_spec: pd.D
 
     if len(state['canton']) > 0:
         for location in state['canton']:
-            meta = reporting_methods.translate_state_to_meta(state, code_groups, location, "canton")
+            meta = reporting_methods.translate_state_to_meta(state, code_groups, location, boundary="canton")
             report = reporting_methods.baseline_report_and_data(meta, data, material_spec)
             reports.append(report)
 
     if len(state['city']) > 0:
         for location in state['city']:
-            meta = reporting_methods.translate_state_to_meta(state, code_groups, location, "city")
+            meta = reporting_methods.translate_state_to_meta(state, code_groups, location, boundary="city")
             report = reporting_methods.baseline_report_and_data(meta, data, code_material)
             reports.append(report)
 
     if len(state['feature_name']) > 0:
         for location in state['feature_name']:
-            meta = reporting_methods.translate_state_to_meta(state, code_groups, location, None)
+            meta = reporting_methods.translate_state_to_meta(state, code_groups, location, boundary=None)
             report = reporting_methods.baseline_report_and_data(meta, data, code_material)
             reports.append(report)
 
@@ -404,30 +404,35 @@ def apply_filters() -> None:
     """
 
     print("Applying filters\n")
-    s_data = st.session_state["survey_data"]  # Original unfiltered data
-    f_data = s_data.copy()
+    print(st.session_state["selected_parameters"])
+    # s_data =   # Original unfiltered data
+    f_data = st.session_state["survey_data"].copy()
     params = st.session_state['selected_parameters']
 
     # Step 1: Filter by Canton
     s_cantons = params["canton"]
     if s_cantons:
         f_data = f_data[f_data["canton"].isin(params['canton'])]
+    print('cantons filter ', len(f_data))
 
     # Step 2: Filter by City
     s_cities = params["city"]
     if s_cities:
         f_data = f_data[f_data["city"].isin(params['city'])]
-
+    print('cities filter ', len(f_data))
     # Step 3: Filter by Feature Name
     s_feature_names = params["feature_name"]
     if s_feature_names:
         f_data = f_data[f_data["feature_name"].isin(s_feature_names)]
-
+    print('feature names filter ', len(f_data))
     # Step 4: Filter by Feature Type
     f_type = params["feature_type"]
+    print(f_type)
     if f_type != "both":
-        feature_code = "l" if f_type == "lake" else "r"
-        f_data = f_data[f_data["feature_type"] == feature_code]
+        print('not both')
+        #feature_code = "l" if f_type == "lake" else "r"
+        f_data = f_data[f_data["feature_type"] == f_type]
+    print('feature type filter ', len(f_data))
     s_codes = params['selected_objects']
     if s_codes:
         f_data = f_data[f_data['code'].isin(params['selected_objects'])]
@@ -435,6 +440,7 @@ def apply_filters() -> None:
     if date_range:
         mask = (f_data['date'] >= pd.Timestamp(date_range[0])) & (f_data['date'] <= pd.Timestamp(date_range[1]))
         f_data = f_data[mask]
+    print("end", len(f_data))
 
     st.session_state["filtered_data"] = f_data.reset_index(drop=True)
 
@@ -489,14 +495,14 @@ def update_date_range(f_data: pd.DataFrame) -> tuple[pd.Timestamp, pd.Timestamp]
     else:
         end_d = pd.to_datetime(end_d)
 
-    start_d = max(min_d, min(start_d, max_d))
+    start_d = min(min_d, min(start_d, max_d))
     end_d = max(min_d, min(end_d, max_d))
 
     st.session_state["date_range"] = (start_d, end_d)
 
     return start_d, end_d
 
-def apply_location_filters(data: pd.DataFrame, selected_parameters: dict) -> pd.DataFrame:
+def apply_location_filters(datax: pd.DataFrame, selected_parameters: dict) -> pd.DataFrame:
     """
     Applies location and date filters to the data and formats the date column.
 
@@ -509,6 +515,7 @@ def apply_location_filters(data: pd.DataFrame, selected_parameters: dict) -> pd.
     Returns:
         pd.DataFrame: The filtered data with the date column formatted.
     """
+    data = datax.copy()
 
     if len(selected_parameters["canton"]) > 0:
         data = data[data["canton"].isin(selected_parameters["canton"])]
@@ -516,6 +523,8 @@ def apply_location_filters(data: pd.DataFrame, selected_parameters: dict) -> pd.
         data = data[data["city"].isin(selected_parameters["city"])]
     if len(selected_parameters["feature_name"]) > 0:
         data = data[data["feature_name"].isin(selected_parameters["feature_name"])]
+    print("in location filter")
+    print(selected_parameters["feature_type"])
     if selected_parameters["feature_type"] not in ['river', 'lake']:
         pass
     else:
@@ -659,7 +668,7 @@ with st.expander(f"**{prompts.labels['parameter_selection'][language]}**", expan
     col1, col2 = st.columns(2)
     with col1:
         st.write(f'**{prompts.labels["step_1_subheader"][language]}**')
-        survey_data = st.session_state["survey_data"]
+        survey_data = st.session_state["survey_data"].copy()
 
         # selected_parameters = st.session_state["selected_parameters"].copy()
 
@@ -667,23 +676,23 @@ with st.expander(f"**{prompts.labels['parameter_selection'][language]}**", expan
         st.session_state['selected_parameters']["canton"] = st.multiselect(
             label=prompts.labels["canton"][language],
             options=survey_data["canton"].unique(),
-            default=st.session_state['selected_parameters']["canton"],
+            default=None,
             key="canton"
         )
 
         if len(st.session_state['selected_parameters']["canton"]) > 0:
-            available_cities = apply_location_filters(survey_data, st.session_state['selected_parameters']).city.unique()
+            available_cities = survey_data[survey_data.canton.isin(st.session_state['selected_parameters']['canton'])].city.unique()
         else:
             available_cities = survey_data.city.unique()
         st.session_state['selected_parameters']["city"] = st.multiselect(
             label=prompts.labels["city"][language],
             options=available_cities,
-            default=st.session_state['selected_parameters']["city"],
+            default=None, # st.session_state['selected_parameters']["city"],
             key="city"
         )
 
         if len(st.session_state['selected_parameters']["city"]) > 0:
-            available_feature_names = apply_location_filters(survey_data, st.session_state['selected_parameters']).feature_name.unique()
+            available_feature_names = survey_data[survey_data.city.isin(st.session_state['selected_parameters']['city'])].feature_name.unique()
         if len(st.session_state['selected_parameters']["canton"]) > 0:
             available_feature_names = survey_data[survey_data["canton"].isin(st.session_state['selected_parameters']["canton"])]["feature_name"].unique()
         else:
@@ -691,23 +700,16 @@ with st.expander(f"**{prompts.labels['parameter_selection'][language]}**", expan
         st.session_state['selected_parameters']["feature_name"] = st.multiselect(
             label=prompts.labels["feature_name"][language],
             options=available_feature_names,
-            default=st.session_state['selected_parameters']["feature_name"],
+            default=None, # st.session_state['selected_parameters']["feature_name"],
             key="feature_name"
         )
 
         available_feature_types = apply_location_filters(survey_data, st.session_state['selected_parameters']).feature_type.unique()
-        if len(available_feature_types) > 1:
-            available_feature_types = ["lake", "river", "both"]
-        else:
-            if "l" in available_feature_types:
-                available_feature_types = ["lake"]
-            else:
-                available_feature_types = ["river"]
-        st.session_state['selected_parameters']['feature_type']= st.pills(
+        print(available_feature_types)
+        st.session_state['selected_parameters']['feature_type']= st.selectbox(
             label=prompts.labels["select_feature_type"][language],
-            options= available_feature_types,
+            options= ["l", "r", "both"],
             format_func=lambda x: prompts.labels[x][language],
-            default= st.session_state['selected_parameters']["feature_type"] if st.session_state['selected_parameters']["feature_type"] in available_feature_types else None,
             key="feature_type"
         )
 
@@ -838,7 +840,8 @@ with tab1:
             current_llm = use_model(**model_args_no_streaming)
             code_use = load_codes()[['code', 'groupname']].set_index('code')
             code_material = load_codes()[['code', 'material']].set_index('code')
-            st.session_state["rough_drafts"] = generate_reports(st.session_state["selected_parameters"], code_use, code_material, st.session_state['filtered_data'])
+            print('Generating rough draft\n')
+            st.session_state["rough_drafts"] = generate_reports(st.session_state["selected_parameters"], code_use, code_material, st.session_state["survey_data"].copy())
             chart_data = st.session_state.get("filtered_data", pd.DataFrame())
             description_column = language_column_map[st.session_state["language"]]
             objects = chart_data[description_column].unique()

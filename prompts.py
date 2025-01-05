@@ -127,12 +127,11 @@ def reporter_prompt(summary, scatterplot, barchart, inventory, rough_draft):
 
 
 # labels
-
 report_assistant_text = {
     "English": (
         "### The Report Assistant\n\n"
-        "The report assistant is a supplement to the 2022 Swiss Federal Report on Trash Density [IQAASL End of Sampling 2021]({iqaasl}). "
-        "It is an accompaniment to the theme [waste along lakes and rivers]({bafu_theme}). "
+        "The report assistant is a supplement to the 2022 Swiss Federal Report on Trash Density along lakes and rivers: [IQAASL End of Sampling 2021]({iqaasl}). "
+        "It is also an accompaniment to the FOEN theme: [waste along lakes and rivers]({bafu_theme}). "
         "The assistant helps stakeholders generate customized reports quickly. "
         "Reports can be tailored to specific needs, whether for a municipality, lake, or canton.\n\n"
         "By leveraging large language models (LLMs), it enables interactive data exploration. "
@@ -142,19 +141,19 @@ report_assistant_text = {
     ),
     "French": (
         "### L'Assistant de Rapport\n\n"
-        "L'assistant de rapport est un complément au Rapport fédéral suisse 2022 sur la densité des déchets [IQAASL End of Sampling 2021]({iqaasl}). "
-        "Il est un accompagnement au thème [les déchets le long des lacs et des rivières]({bafu_theme}). "
-        "L'assistant aide les partenairesà générer rapidement des rapports personnalisés. "
+        "L'assistant de rapport est un complément au Rapport fédéral suisse 2022 sur la densité des déchets le long des lacs et des rivières : [IQAASL Fin de l'échantillonnage 2021]({iqaasl}). "
+        "Il est également un accompagnement au thème de l'OFEV [les déchets le long des lacs et des rivières]({bafu_theme}). "
+        "L'assistant aide les parties prenantes à générer rapidement des rapports personnalisés. "
         "Les rapports peuvent être adaptés à des besoins spécifiques, qu'il s'agisse d'une municipalité, d'un lac ou d'un canton.\n\n"
         "En exploitant des modèles de langage avancés (LLMs), il permet une exploration interactive des données. "
-        "Les partenairespeuvent explorer, filtrer et analyser les données de manière interactive. "
+        "Les parties prenantes peuvent explorer, filtrer et analyser les données de manière interactive. "
         "Elles peuvent poser des questions et recevoir des explications contextuelles claires sur les résultats. "
-        "Cela permet aux partenairesde prendre des décisions éclairées basées sur les conditions observées."
+        "Cela permet aux parties prenantes de prendre des décisions éclairées basées sur les conditions observées."
     ),
     "German": (
         "### Der Berichtsassistent\n\n"
-        "Der Berichtsassistent ist eine Ergänzung zum Schweizerischen Bundesbericht 2022 über die Abfalldichte [IQAASL End of Sampling 2021]({iqaasl}). "
-        "Er ist eine Begleitung zum Thema [Abfälle entlang von Seen und Flüssen]({bafu_theme}). "
+        "Der Berichtsassistent ist eine Ergänzung zum Schweizerischen Bundesbericht 2022 über die Abfalldichte entlang von Seen und Flüssen: [IQAASL End of Sampling 2021]({iqaasl}). "
+        "Er ist auch eine Begleitung zum BAFU-Thema [Abfälle entlang von Seen und Flüssen]({bafu_theme}). "
         "Der Assistent hilft Stakeholdern, schnell maßgeschneiderte Berichte zu erstellen. "
         "Berichte können auf spezifische Bedürfnisse zugeschnitten werden, sei es für eine Gemeinde, einen See oder einen Kanton.\n\n"
         "Durch den Einsatz großer Sprachmodelle (LLMs) ermöglicht er eine interaktive Datenexploration. "
@@ -163,6 +162,7 @@ report_assistant_text = {
         "Dies ermöglicht es Stakeholdern, fundierte Entscheidungen auf der Grundlage beobachteter Bedingungen zu treffen."
     )
 }
+
 
 data_info_text = {
     "English": (
@@ -582,8 +582,8 @@ labels = {
     "French": "Expliquer le graphique",
     "German": "Grafik erklären"
 },
-    "lake": {"English": "Lake", "French": "Lac", "German": "See"},
-    "river": {"English": "River", "French": "Rivière", "German": "Fluss"},
+    "l": {"English": "Lake", "French": "Lac", "German": "See"},
+    "r": {"English": "River", "French": "Rivière", "German": "Fluss"},
     "both": {"English": "Both", "French": "Les deux", "German": "Beide"}
 
 

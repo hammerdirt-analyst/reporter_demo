@@ -118,7 +118,7 @@ def reporter_prompt(summary, scatterplot, barchart, inventory, rough_draft):
                 "The column names and descriptions for inventory items:\n1. object: the use or plain language description"
                 "\n2. code: the MLW code for the item\n3. quantity: the total number of items found\n4. pcs/m: the average number"
                 " of items per meter of shoreline.\n5 % of total: the proportion of the current set of data.\n6. number of samples:"
-                " the number of samples collected\n7. fail rate: the proportion of samples that contained at least one of the objects\n\n",
+                " the number of samples collected\n7. fail rate: the proportion of samples that contained at least one of the objects, the chance of finding at least on of the objects at a survey\n\n",
                 "You are to discuss plastics, trash or litter in the environment, citizen-science, swiss or european policy",
                 " concerning plastics and trash in the environment, probability and statistics, calculus, bayes theorem, bayesian statistics",
                 " other topics of a sensitive or sexual nature are not to be considered.",
@@ -130,8 +130,8 @@ def reporter_prompt(summary, scatterplot, barchart, inventory, rough_draft):
 report_assistant_text = {
     "English": (
         "### The Report Assistant\n\n"
-        "The report assistant is a supplement to the 2022 Swiss Federal Report on Trash Density along lakes and rivers: [IQAASL End of Sampling 2021]({iqaasl}). "
-        "It is also an accompaniment to the FOEN theme: [waste along lakes and rivers]({bafu_theme}). "
+        f"The report assistant is a supplement to the 2022 Swiss Federal Report on Trash Density along lakes and rivers: [IQAASL End of Sampling 2021]({iqaasl}). "
+        f"It is also an accompaniment to the FOEN theme: [waste along lakes and rivers]({bafu_theme}). "
         "The assistant helps stakeholders generate customized reports quickly. "
         "Reports can be tailored to specific needs, whether for a municipality, lake, or canton.\n\n"
         "By leveraging large language models (LLMs), it enables interactive data exploration. "

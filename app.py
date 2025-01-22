@@ -647,7 +647,7 @@ model_args_no_streaming = dict(name='openai', model="gpt-4o-mini", temperature=0
                                        streaming=False)
 model_args_streaming = dict(name='openai', model="gpt-4o-mini", temperature=0.6, max_tokens=1000)
 language = st.radio(
-    "", ["English", "French", "German"], index=0, horizontal=True, key="language"
+    "choose language", ["English", "French", "German"], index=0, horizontal=True, key="language"
 )
 if 'language' not in st.session_state:
     st.markdown(prompts.report_assistant_text["English"])
@@ -815,7 +815,7 @@ with st.expander(f"**{prompts.labels['parameter_selection'][language]}**", expan
             st.warning(prompts.labels["no_data_warning"][language])
             st.button(prompts.labels["make_roughdraft"][language], key="make_roughdraft_button", disabled=True)
         else:
-            if st.button(prompts.labels["make_roughdraft"][language], key="make_roughdraft_button"):
+            if st.button(prompts.labels["make_roughdraft"][language],  key="make_roughdraft_button"):
                 st.session_state["final_selected_parameters"] = st.session_state['selected_parameters']
 
 if "language" not in st.session_state:

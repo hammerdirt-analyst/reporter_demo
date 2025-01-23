@@ -2,9 +2,9 @@ numpy
 pandas
 pydantic
 scikit-learn
-langchain
-langchain-core
-langchain-openai
+langchain >= 0.3.31
+langchain-core >= 0.3.31
+langchain-openai >= 0.3.31
 plotly
 streamlit
 python-dotenv

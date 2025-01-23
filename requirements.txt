@@ -1,0 +1,11 @@
+numpy
+pandas
+pydantic
+scikit-learn
+langchain
+langchain-core
+langchain-openai
+plotly
+streamlit
+python-dotenv
+tabulate

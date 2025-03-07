@@ -411,10 +411,10 @@ if 'current_task' in ss and ss.current_task == "reporting":
         if "messages" not in ss:
             ss.messages = []
         if "chat_history" not in st.session_state:
-            st.session_state.chat_history = [
+            st.session_state.chat_history_report = [
                 AIMessage(content=prompts_labels.agent_intro[ss["language"]]),
             ]
-        for message in st.session_state.chat_history:
+        for message in st.session_state.chat_history_report:
             if isinstance(message, AIMessage):
                 with st.chat_message("AI"):
                     st.write(message.content)
@@ -423,7 +423,7 @@ if 'current_task' in ss and ss.current_task == "reporting":
                     st.write(message.content)
         user_query = st.chat_input("Type your message here...")
         if user_query is not None and user_query != "":
-            st.session_state.chat_history.append(HumanMessage(content=user_query))
+            st.session_state.chat_history_report.append(HumanMessage(content=user_query))
             #docs, context, sources = rmn.langchain_receiver(user_query)
             # print(context)
 
@@ -448,7 +448,7 @@ if 'current_task' in ss and ss.current_task == "reporting":
                 response = the_report_agent.stream(query)
                 r = st.write_stream(response)
 
-            st.session_state.chat_history.append(AIMessage(content=r))
+            st.session_state.chat_history_report.append(AIMessage(content=r))
     else:
         st.markdown("No roughdraft yet")
 

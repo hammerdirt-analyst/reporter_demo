@@ -47,17 +47,17 @@ agg_groups = {
 }
 
 # css formatting for tables
-format_kwargs = dict(precision=2, thousands="'", decimal=",")
-
-header_row = {'selector':'th', 'props': 'background-color: #FFF; font-size:14px; text-align:left; width: auto; word-break: keep-all;'}
-even_rows = {"selector": 'tr:nth-child(even)', 'props': 'background-color: rgba(139, 69, 19, 0.08);'}
-odd_rows = {'selector': 'tr:nth-child(odd)', 'props': 'background: #FFF;'}
-table_font = {'selector': 'tr', 'props': 'font-size: 12px;'}
-table_data = {'selector': 'td', 'props': 'padding:4px; font-size:12px;text-align: center;'}
-table_caption_top = {'selector': 'caption', 'props': 'caption-side: top; font-size:1em; text-align: left; margin-bottom: 10px;'}
-table_border = {'selector': 'table, th, tr, td', 'props': 'border: 1px solid black; border-collapse: collapse;'}
-
-table_css_styles = [even_rows, odd_rows, table_font, header_row, table_data, table_border, table_caption_top]
+# format_kwargs = dict(precision=2, thousands="'", decimal=",")
+#
+# header_row = {'selector':'th', 'props': 'background-color: #FFF; font-size:14px; text-align:left; width: auto; word-break: keep-all;'}
+# even_rows = {"selector": 'tr:nth-child(even)', 'props': 'background-color: rgba(139, 69, 19, 0.08);'}
+# odd_rows = {'selector': 'tr:nth-child(odd)', 'props': 'background: #FFF;'}
+# table_font = {'selector': 'tr', 'props': 'font-size: 12px;'}
+# table_data = {'selector': 'td', 'props': 'padding:4px; font-size:12px;text-align: center;'}
+# table_caption_top = {'selector': 'caption', 'props': 'caption-side: top; font-size:1em; text-align: left; margin-bottom: 10px;'}
+# table_border = {'selector': 'table, th, tr, td', 'props': 'border: 1px solid black; border-collapse: collapse;'}
+#
+# table_css_styles = [even_rows, odd_rows, table_font, header_row, table_data, table_border, table_caption_top]
 
 query_embedding = OpenAIEmbeddings(model="text-embedding-ada-002")
 consumer = os.getenv("MONGO_DB_CONSUMER_URI")
@@ -72,13 +72,16 @@ def langchain_receiver(message: str) -> []:
         embedding_key = "embeddings",
         text_key = "content"
         )
-
+    # search_type = "similarity_score_threshold",
+    # search_kwargs = {"k": 1, "score_threshold": 0.2}
     retriever = vectorstore.as_retriever(search_kwargs={"k": 5}, search_type='similarity')
     docs = retriever.invoke(message)
+    # print(docs)
     content = [x.page_content for x in docs]
+    sources = [x.metadata['source'] for x in docs]
     context = '\n\n'.join(content)
 
-    return docs, context
+    return docs, context, sources
 
 def create_regional_options(data, region):
     if region in ['Canton', 'City']:

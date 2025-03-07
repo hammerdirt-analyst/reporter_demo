@@ -28,13 +28,13 @@ reference_land_use = ['Almost all buildings', 'Mostly buildings some forest', 'E
 filters = ['selected_cantons', 'selected_cities', 'selected_features', 'selected_feature_type', 'start_date', 'end_date', 'selected_objects', 'selected_codegroups', 'selected_codes']
 
 
-def rag_response_system_prompt(context: str, sources: str) -> str:
+def rag_response_system_prompt(context: str, sources) -> str:
     print('rag response system')
     system = (
         "You are an assistant for question-answering tasks. Use the following pieces of retrieved context"
         "to answer the question. You must include the cited Sources at the end of your response."
         "If you don't know the answer, just say that you don't know."
-        f"\\nContext:\n\n {context}\n\nSources:\n\n {sources}"
+        f"\\nContext:\n\n {context}\n\nSources:\n\n{sources}"
     )
     return system
 
@@ -301,11 +301,11 @@ if 'current_task' in ss and ss.current_task == "reporting":
         docs = ""
 
         if making_report:
-            # code_description = load_codes()[['code', 'en']]
-            # code_description = code_description.to_dict(orient='records')
-            # code_description = {item['code']: item['en'] for item in code_description}
+            code_description = load_codes()[['code', 'en']]
+            code_description = code_description.to_dict(orient='records')
+            code_description = {item['code']: item['en'] for item in code_description}
             #
-            # ss.code_description = code_description
+            ss.code_description = code_description
             report_data = rmn.filter_data(load_survey_data(), ss)
             ss.code_material = load_codes()[['code', 'material']].set_index('code')
             if len(ss.selected_regions) == 1:
@@ -402,7 +402,8 @@ if 'current_task' in ss and ss.current_task == "reporting":
         inventory = current_llm.stream(messages)
         inventory_stream = st.write_stream(inventory)
         ss.report = True
-        with st.expander("Roughdraft"):
+        st.markdown("**View the query results below**")
+        with st.expander("Query results"):
             st.markdown(ss.roughdraft)
     if 'roughdraft' in ss and ss.roughdraft != "No roughdraft yet" and ss.report == True:
         current_llm = ChatOpenAI(**model_args_streaming)
@@ -422,8 +423,8 @@ if 'current_task' in ss and ss.current_task == "reporting":
         user_query = st.chat_input("Type your message here...")
         if user_query is not None and user_query != "":
             st.session_state.chat_history.append(HumanMessage(content=user_query))
-            docs, context = rmn.langchain_receiver(user_query)
-            print(context)
+            #docs, context, sources = rmn.langchain_receiver(user_query)
+            # print(context)
 
             the_report_prompt = prompts_labels.reporter_prompt(ss)
 

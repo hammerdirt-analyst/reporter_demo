@@ -259,7 +259,11 @@ if 'current_task' in ss and ss.current_task == "reporting":
                 # and define the availble code options
                 code_options = rmn.filter_data(load_survey_data(), ss).code.unique()
                 groupnames = load_codes()[load_codes().code.isin(code_options)]['groupname'].unique()
-
+                code_description = load_codes()[load_codes().code.isin(code_options)][['code', 'en']]
+                code_description = code_description.to_dict(orient='records')
+                code_description = {item['code']: item['en'] for item in code_description}
+                #
+                ss.code_description = code_description
 
                 if ss.object_group is not None:
 
@@ -267,6 +271,7 @@ if 'current_task' in ss and ss.current_task == "reporting":
                         selected_objects = st.multiselect(
                             label="Select objects",
                             options=code_options,
+                            format_func= lambda x: f'{x}: {ss.code_description[x]}',
                             key='selected_objects',
                             label_visibility='collapsed',
                             max_selections=5,
@@ -301,11 +306,7 @@ if 'current_task' in ss and ss.current_task == "reporting":
         docs = ""
 
         if making_report:
-            code_description = load_codes()[['code', 'en']]
-            code_description = code_description.to_dict(orient='records')
-            code_description = {item['code']: item['en'] for item in code_description}
-            #
-            ss.code_description = code_description
+
             report_data = rmn.filter_data(load_survey_data(), ss)
             ss.code_material = load_codes()[['code', 'material']].set_index('code')
             if len(ss.selected_regions) == 1:

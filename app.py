@@ -410,7 +410,7 @@ if 'current_task' in ss and ss.current_task == "reporting":
         current_llm = ChatOpenAI(**model_args_streaming)
         if "messages" not in ss:
             ss.messages = []
-        if "chat_history" not in st.session_state:
+        if "chat_history_report" not in st.session_state:
             st.session_state.chat_history_report = [
                 AIMessage(content=prompts_labels.agent_intro[ss["language"]]),
             ]

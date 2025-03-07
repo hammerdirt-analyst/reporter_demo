@@ -98,27 +98,27 @@ def barchart_prompt(data, grouped_data, x_axis, y_axis, language):
 
     return ''.join(prompt)
 
-def reporter_prompt(summary, scatterplot, barchart, inventory, rough_draft):
+def reporter_prompt(summary, scatterplot, barchart, inventory, rough_draft, context: str = " "):
     aprompt = (
                 "You are helping a data scientist write a summary report of volunteer observations of objects found along",
-                " lakes and rivers in Switzerland. The data is collected using the JRC/EU method counting beach litter. This",
-                " method is defined in the _Guide for monitoring marine litter in european seas_. Your other reference document",
-                " is the federal report on litter density of swiss lakes (IQAASL) published in 2021 and available here:\n\n",
-                "[IQAASL End of Sampling 2021](https://hammerdirt-analyst.github.io/IQAASL-End-0f-Sampling-2021/)\n\n",
+                " lakes and rivers in Switzerland. The data is collected using the JRC/EU/OSPAR method for counting beach litter. This",
+                " method is defined in the Guide for monitoring marine litter in european seas.",
                 "The client has already prepared a rough draft of the report as well as a bar chart, scatter plot and map.",
-                " Your task is to answer the clients questions reference these reports. The client is preparing a decision",
+                " Your task is to answer the clients questions reference these reports and the provided context. The client is preparing a decision",
                 " support document and is relying on you for brief answers that can be supported by the documents provided",
-                " below or the previously mentioned references. The client has provided the following documents:\n\n",
+                " below:\n\n",
                 f"summary: {summary}\n\n",
                 f"scatterplot: {scatterplot}\n\n",
                 f"barchart: {barchart}\n\n",
                 f"inventory: {inventory}\n\n",
                 f"rough draft: {rough_draft}\n\n",
+                "Furthermore a vectory similarity search has been conducted given the users questions and supporting references if their are any:\n\n",
+                f"{context}\n\n",
                 "!Instructions!\n\n"
-                "The column names and descriptions for inventory items:\n1. object: the use or plain language description"
-                "\n2. code: the MLW code for the item\n3. quantity: the total number of items found\n4. pcs/m: the average number"
+                "The column names and descriptions for the inventory:\n\n1. object: the use or plain language description"
+                "\n2. code: the identifying code for the item\n3. quantity: the total number of items found\n4. pcs/m: the average number"
                 " of items per meter of shoreline.\n5 % of total: the proportion of the current set of data.\n6. number of samples:"
-                " the number of samples collected\n7. fail rate: the proportion of samples that contained at least one of the objects, the chance of finding at least on of the objects at a survey\n\n",
+                " the number of samples collected\n7. fail rate: the proportion of samples that contained at least one of the objects, the chance of finding at least one of the objects at a survey\n\n",
                 "You are to discuss plastics, trash or litter in the environment, citizen-science, swiss or european policy",
                 " concerning plastics and trash in the environment, probability and statistics, calculus, bayes theorem, bayesian statistics",
                 " other topics of a sensitive or sexual nature are not to be considered.",
@@ -282,14 +282,9 @@ german_filtertwo = ('Bestätigen Sie Ihre Auswahl, bevor Sie einen Entwurf erste
                     'In diesem Fall wird die Liste der ausgewählten Codes nicht im folgenden Display angezeigt.'
                     )
 
-
-
-
 french_filterone = 'Appliquez les filtres de localisation, puis vous pouvez sélectionner un ou plusieurs objets. Si vous ne sélectionnez aucun objet, le rapport inclura tous les objets trouvés dans la plage de dates et les filtres géographiques.'
 german_filterone = 'Wenden Sie die Standortfilter an, dann können Sie ein oder mehrere Objekte auswählen. Wenn Sie keine Objekte auswählen, enthält der Bericht alle Objekte, die im Datumsbereich und innerhalb der geografischen Filter gefunden wurden.'
 english_filterone = 'Apply the location filters, then you can select one object or multiple objects. If you select none of the objects, the report will include all objects found within the date range and geographic filters.'
-
-
 
 labels = {
     "language": {
@@ -585,10 +580,6 @@ labels = {
     "l": {"English": "Lake", "French": "Lac", "German": "See"},
     "r": {"English": "River", "French": "Rivière", "German": "Fluss"},
     "both": {"English": "Both", "French": "Les deux", "German": "Beide"}
-
-
-
-
 }
 
 def translate_columns(language):

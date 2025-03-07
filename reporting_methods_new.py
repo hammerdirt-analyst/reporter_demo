@@ -2,14 +2,11 @@ import re
 import unicodedata
 import pandas as pd
 import numpy as np
-import streamlit
-from pydantic import BaseModel, Field
-from typing import List,Optional
 from sklearn.metrics.pairwise import cosine_similarity
 from sklearn.preprocessing import MinMaxScaler
 import plotly.express as px
 import prompts_labels
-from langchain_openai import ChatOpenAI, OpenAIEmbeddings
+from langchain_openai import OpenAIEmbeddings
 from langchain_mongodb import MongoDBAtlasVectorSearch
 import os
 from dotenv import load_dotenv

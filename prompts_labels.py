@@ -81,52 +81,6 @@ data_info_text = {
 what_would_you_like_to_do = (
     "Tasks: What would you like to do?")
 
-# english_instructions = (
-#     "Make a summary of one location or compare locations\n\n"
-#     "1. **To make a report** select one of the cantons, lakes, rivers or cities."
-#     " **To compare locations** select multiple cantons or lakes. *Note:* when you select"
-#     " a canton or lake a report is automatically generated for each city that is included"
-#     " in the region.\n"
-#     "2. Select your date range. The dates will default to the maximum range available based on the previous selections\n"
-#     "3. Select the objects of interest. If you do not select any objects all objects will be included.\n"
-#     "4. Apply filters.\n"
-#     "5. confirm the filters.\n"
-#     "5. Make rough drafts.\n"
-#     "6. Define scatterplot parameters. Click on explain chart\n"
-#     "7. Define barchart parameters. Click on explain chart\n\n"
-#     "The report results and the chart descriptions will be loaded in the context of the chat agent.")
-
-# select_region_instructions = {
-#     "English": (
-#         "This is where you select the regions of interest. The filter is progressive, thus if you select a canton only cities"
-#         " or lakes included that canton will be available for selection. If you want to compare the lakes or rivers do not select"
-#         " a canton. Recall that if you select a canton(s) or lake(s) or rivers(s) a report will be generated for each city in the"
-#         " the selected region"
-#
-#     )}
-
-# select_feature_type_instructions= {
-#     "English": (
-#         "**If you have selected a canton or city we recommend that you choose between river and lake**. The sampling conditions and the"
-#         " sample results are very different between lakes and rivers. Their are many reasons for this, but the most obvious is the"
-#         " flow of water. In a river the water is moving fast and the litter is moving with it. In a lake the water is still and the litter"
-#         " will accumulate on the shore (estuaries and marshes are the exception). If you select both the results will be combined."
-#     )}
-
-# select_date_range_instructions = {
-#     "English": (
-#         "The default date range is the maximum range available based on the previous selections. If you want to select a specific"
-#         " date range you can do so here. Their are not alot of samples we suggest taking the maximum range available."
-#     )}
-
-# select_objects_instructions = {
-#     "English": (
-#         "Select the objects of interest or select by code-group. The code group are objects that have a similar use case"
-#         " or are associated with an activity. If you do not select any objects or a code-group, all objects will be included."
-#         " Once you have done that apply the code filters. And create the rough drafts: A summary of the results and a location map"
-#         " will be generated automatically. The original report and the map information is part of the context for our chat agent."
-#         )}
-
 current_articles_rag = (
     "1. The guide for monitoring marine litter in European seas 2023\n"
     "2. Differentiating urban runoff marine transport\n"

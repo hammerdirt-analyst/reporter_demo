@@ -1,5 +1,3 @@
-import re
-import unicodedata
 import pandas as pd
 import numpy as np
 from sklearn.metrics.pairwise import cosine_similarity
@@ -132,30 +130,30 @@ def extract_roughdraft_text(aresult: list[dict]) -> str:
         rough += label.capitalize() +'\n\n'+ description + '\n\n'
     return rough
 
-def clean_string(text: str) -> str:
-    """
-    Removes accents, special characters, and spaces from a string.
-
-    This function normalizes the input string to decompose accents, removes accents by keeping only ASCII characters,
-    and removes special characters and spaces.
-
-    Args:
-        text (str): The input string to be cleaned.
-
-    Returns:
-        str: The cleaned string with accents, special characters, and spaces removed.
-    """
-
-    # normalize to decompose accents
-    text = unicodedata.normalize("NFD", text)
-
-    # remove accents by keeping only ASCII characters
-    text = text.encode("ascii", "ignore").decode("utf-8")
-
-    # remove special characters and spaces
-    text = re.sub(r"[^a-zA-Z0-9]", "", text)
-
-    return text
+# def clean_string(text: str) -> str:
+#     """
+#     Removes accents, special characters, and spaces from a string.
+#
+#     This function normalizes the input string to decompose accents, removes accents by keeping only ASCII characters,
+#     and removes special characters and spaces.
+#
+#     Args:
+#         text (str): The input string to be cleaned.
+#
+#     Returns:
+#         str: The cleaned string with accents, special characters, and spaces removed.
+#     """
+#
+#     # normalize to decompose accents
+#     text = unicodedata.normalize("NFD", text)
+#
+#     # remove accents by keeping only ASCII characters
+#     text = text.encode("ascii", "ignore").decode("utf-8")
+#
+#     # remove special characters and spaces
+#     text = re.sub(r"[^a-zA-Z0-9]", "", text)
+#
+#     return text
 
 #
 #
@@ -800,7 +798,7 @@ def baseline_report_and_data(data: pd.DataFrame, state: dict = None) -> str:
     if state["object_group"] == "Specific objects":
         descriptions = [state['code_description'][x].lower() for x in state['selected_objects']]
         objects = ', '.join(descriptions)
-    if state["object_group"] == "object group":
+    if state["object_group"] == "Object group":
         objects = f"objects from {state['selected_group']}"
 
     subject = "**Subject:** " + 'shoreline litter observations of' + " " + objects + "\n\n"

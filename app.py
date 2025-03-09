@@ -69,6 +69,34 @@ def display_current_parameters():
 
     return current_params
 
+def format_report_type_func(option):
+    index = prompts_labels.labels['report_type_options']["English"].index(option)  # Find index in English list
+    return prompts_labels.labels['report_type_options'][ss.language][index]
+
+def format_feature_type_func(option):
+    index = prompts_labels.labels['feature_type_options']["English"].index(option)  # Find index in English list
+    return prompts_labels.labels['feature_type_options'][ss.language][index]
+
+def format_object_group_func(option):
+    index = prompts_labels.labels['code_groupnames']["English"].index(option)  # Find index in English list
+    res = prompts_labels.labels['code_groupnames'][ss.language][index]
+    print("formatting object group")
+    print(res)
+    return res
+
+# def format_groupname_func(option):
+#     index = prompts_labels.labels['groupname_options']["English"].index(option)  # Find index in English list
+#     return prompts_labels.labels['groupname_options'][ss.language][index]
+
+def format_groupname_func(option):
+    if option is None:
+        return "None"  # Ensure 'None' is displayed as is
+    selected_language = st.session_state.get("language", "English")  # Default to English
+    res = prompts_labels.code_group_translations.get(selected_language, prompts_labels.code_group_translations["English"]).get(option, option)  # Return translated term or default
+    print("formatting group name")
+    print(res)
+    return res
+
 @st.cache_data
 def load_survey_data():
     a = pd.read_csv('data/end_process/before_2019.csv')
@@ -100,7 +128,7 @@ def lat_lon():
     lat_lon = beaches()[['slug', 'latitude', 'longitude']].set_index('slug')
     return lat_lon
 
-ss.language = 'English'
+ss.language = 'French'
 st.set_page_config(
     page_title="The state of things",
     page_icon="resources/goodimage.jpeg",
@@ -139,8 +167,8 @@ with st.sidebar:
         st.json(display_params)
 
 with st.container(key="introduction"):
-    st.title(prompts_labels.openning)
-    st.subheader(prompts_labels.secondopenning)
+    st.title(prompts_labels.openning[ss.language])
+    st.subheader(prompts_labels.secondopenning[ss.language])
     st.markdown(prompts_labels.report_assistant_text[ss.language])
     with st.expander(f"**{prompts_labels.labels['whats_this'][ss.language]}**", expanded=False):
         st.markdown(prompts_labels.what_this_reprorting_method_does[ss.language])
@@ -148,24 +176,24 @@ with st.container(key="introduction"):
         st.markdown(prompts_labels.data_info_text[ss.language])
 
 with st.container(key="task_container"):
-    st.subheader(prompts_labels.what_would_you_like_to_do)
+    st.subheader(prompts_labels.what_would_you_like_to_do[ss.language])
     col1, col2, col3 = st.columns(3)
     with col1:
-        st.button("Chat with the references", type='primary', on_click=chat_with_references, use_container_width=True,
+        st.button(prompts_labels.tasks[ss.language]['Chat with the references'], type='primary', on_click=chat_with_references, use_container_width=True,
                   key='chatting')
     with col2:
-        st.button("Make a report", type='primary', on_click=report_values, use_container_width=True, key='reporting')
+        st.button(prompts_labels.tasks[ss.language]["Make a report"], type='primary', on_click=report_values, use_container_width=True, key='reporting')
     with col3:
-        st.button("Evaluate / forecast", type='primary', on_click=forecast_values, use_container_width=True,
+        st.button(prompts_labels.tasks[ss.language]["Evaluate a sample / get a forecast"], type='primary', on_click=forecast_values, use_container_width=True,
                   key='forecasting')
 # with st.container(key="task_workspace"):
 #     if ss.current_task is None:
 #         st.write("Please select a task")
 
 if 'current_task' in ss and ss.current_task == "forecasting":
-    st.markdown("**:red[This feature is not yet available]**")
-    st.markdown(prompts_labels.sampleExplanation)
-    st.markdown(prompts_labels.properlyFormattedCsv)
+    st.markdown("**:red[Cette fonctionnalité n'est pas encore disponible - Diese Funktion ist noch nicht verfügbar - Questa funzione non è ancora disponibile - This function is not yet available]**")
+    st.markdown(prompts_labels.sampleExplanation[ss.language])
+    st.markdown(prompts_labels.properlyFormattedCsv[ss.language])
     st.markdown(prompts_labels.sampleTable)
 
 if 'current_task' in ss and ss.current_task == "reporting":
@@ -185,14 +213,15 @@ if 'current_task' in ss and ss.current_task == "reporting":
         ss.object_group = None
 
     with st.container(key='A_form'):
-        st.markdown("### Define the report parameters")
+        st.markdown(prompts_labels.define_the_report_parameters[ss.language])
         with st.container(key='select_region_type', border=True):
-            st.markdown(":red[Start by defining what you want to report on.]")
+            st.markdown(prompts_labels.labels['select_report_type'][ss.language])
             region = st.pills(
                 label="Region",
-                options=["Canton", "City", "Lake", "River"],
+                options=prompts_labels.labels['report_type_options']["English"],
                 key='region',
                 label_visibility='collapsed',
+                format_func = format_report_type_func,
                 default=None
             )
             # has lake, city, canton or river been selected
@@ -203,12 +232,13 @@ if 'current_task' in ss and ss.current_task == "reporting":
         # if canton or city has been selected are we reporting on lakes or rivers or both within the canton or city
         with st.container(key='select_feature_type', border=True):
             if selected_region and selected_city_or_canton:
-                st.markdown(f":red[Do you want to report on lakes, rivers or both within the {region.lower()} boundaries?]")
+                st.markdown(prompts_labels.labels['select_feature_type'][ss.language])
                 feature_type = st.pills(
                     label="Feature Type",
-                    options=["Lake", "River", "Both"],
+                    options=prompts_labels.labels['feature_type_options']["English"],
                     key='feature_type',
                     label_visibility='collapsed',
+                    format_func=format_feature_type_func,
                     default=None
                 )
                 selected_feature_type = ss.feature_type is not None
@@ -218,6 +248,7 @@ if 'current_task' in ss and ss.current_task == "reporting":
             if selected_region:
                 # the available citys, lakes, cantons or rivers to report on
                 options = rmn.create_regional_options(load_survey_data(), ss.region)
+                options = sorted(options)
                 args = {
                     'label':"Select regions",
                     'options':options,
@@ -229,28 +260,29 @@ if 'current_task' in ss and ss.current_task == "reporting":
                 # if city or canton has been selected select the city(s) or canton(s) to report on
                 if selected_city_or_canton:
                     if ss.feature_type is not None:
-                        st.markdown(f":red[Select up to three {ss.region.lower()}s to compare or report on.]")
+                        st.markdown(prompts_labels.labels["select_locations"][ss.language])
                         selected_regions = st.multiselect(**args)
                 # if lake or river has been selected select the lake(s) or river(s) to report on
                 if selected_river_or_lake:
-                    st.markdown(f":red[Select up to three {ss.region.lower()}s to compare or report on.]")
+                    st.markdown(prompts_labels.labels["select_locations"][ss.language])
                     selected_regions = st.multiselect(**args)
 
         # if the lake, river, canton or city has been selected and the feature type has been selected
         # select the object group or specific objects to report on
         if 'selected_regions' in ss and len(ss.selected_regions) > 0:
             with st.container(key='select_codes_objects', border=True):
-                st.markdown(":red[Select the objects you want to report on]")
-                st.markdown(f"Do you want to report on an object group or select specific objects? If you are comparing regions we recommend selecting specific objects or object groups.")
+                st.markdown(prompts_labels.labels["select_object_group_type"][ss.language])
+                st.markdown(prompts_labels.labels["select_object_group_type_instructions"][ss.language])
 
                 # if selected_regions is empty the selector is disabled
                 disabled_object_group = len(ss.selected_regions) == 0
 
                 object_groups = st.pills(
                     label="Object Group",
-                    options=["All", "Specific objects", "object group"],
+                    options=prompts_labels.labels['object_group_type_options']["English"],
                     key='object_group',
                     label_visibility='collapsed',
+                    format_func=format_object_group_func,
                     disabled=disabled_object_group,
                     default=None)
 
@@ -258,14 +290,20 @@ if 'current_task' in ss and ss.current_task == "reporting":
                 # filter the data with the paramters up to this point and
                 # and define the availble code options
                 code_options = rmn.filter_data(load_survey_data(), ss).code.unique()
+                code_options = sorted(code_options)
                 groupnames = load_codes()[load_codes().code.isin(code_options)]['groupname'].unique()
-                code_description = load_codes()[load_codes().code.isin(code_options)][['code', 'en']]
+                groupnames = sorted(groupnames)
+                # print(groupnames)
+                code_description = load_codes()[load_codes().code.isin(code_options)][['code', prompts_labels.key_to_code_description[ss.language]]]
+                code_description = code_description.sort_values('code')
                 code_description = code_description.to_dict(orient='records')
-                code_description = {item['code']: item['en'] for item in code_description}
+                code_description = {item['code']: item[prompts_labels.key_to_code_description[ss.language]] for item in code_description}
                 #
                 ss.code_description = code_description
 
                 if ss.object_group is not None:
+                    print('checking object group')
+                    print(ss.object_group)
 
                     if ss.object_group == 'Specific objects':
                         selected_objects = st.multiselect(
@@ -278,13 +316,18 @@ if 'current_task' in ss and ss.current_task == "reporting":
 
                         )
                         ss.selected_codes = selected_objects
-                    if ss.object_group == 'object group':
+
+                    if ss.object_group == 'Object group':
+                        print("\n! ss.object_group == 'object group'\n")
+                        print([None, *groupnames])
                         selected_group = st.selectbox(
                             label="Select object group",
-                            options=[None, *groupnames],
+                            options=[None, *groupnames],  # Ensure None is handled properly
                             key='selected_group',
-                            label_visibility='collapsed'
+                            label_visibility='collapsed',
+                            format_func=format_groupname_func  # Translate labels dynamically
                         )
+
                         if selected_group is not None:
                             selected_objects = load_codes()[load_codes().groupname == ss.selected_group]['code'].unique()
                             ss.selected_codes = selected_objects
@@ -410,7 +453,7 @@ if 'current_task' in ss and ss.current_task == "reporting":
         current_llm = ChatOpenAI(**model_args_streaming)
         if "messages" not in ss:
             ss.messages = []
-        if "chat_history" not in st.session_state:
+        if "chat_history_report" not in st.session_state:
             st.session_state.chat_history_report = [
                 AIMessage(content=prompts_labels.agent_intro[ss["language"]]),
             ]
@@ -460,7 +503,7 @@ if 'current_task' in ss and ss.current_task == "chatting":
         ss.messages = []
     if "chat_history" not in ss:
         ss.chat_history = [
-            AIMessage(content="Hello, I am the chat agent. How can I help you today?"),
+            AIMessage(content=prompts_labels.chat_rag[ss.language]),
         ]
 
     for message in ss.chat_history:

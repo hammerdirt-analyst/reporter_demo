@@ -149,8 +149,6 @@ st.set_page_config(
 
 language = st.radio("Select language", ["English", "German", "French", "Italian"], horizontal=True, key='language')
 
-# ss.language = 'Italian'
-
 if 'current_task' not in ss:
     ss.current_task = None
 
@@ -180,6 +178,7 @@ with st.sidebar:
         st.json(display_params)
 
 with st.container(key="introduction"):
+    # introduction and references
     st.title(prompts_labels.openning[ss.language])
     st.subheader(prompts_labels.secondopenning[ss.language])
     st.markdown(prompts_labels.report_assistant_text[ss.language])
@@ -189,6 +188,7 @@ with st.container(key="introduction"):
         st.markdown(prompts_labels.data_info_text[ss.language])
 
 with st.container(key="task_container"):
+    # side by side button to select a task
     st.subheader(prompts_labels.what_would_you_like_to_do[ss.language])
     col1, col2, col3 = st.columns(3)
     with col1:
@@ -200,13 +200,15 @@ with st.container(key="task_container"):
         st.button(prompts_labels.tasks[ss.language]["Evaluate a sample / get a forecast"], type='primary', on_click=forecast_values, use_container_width=True,
                   key='forecasting')
 
+# forecasting
 if 'current_task' in ss and ss.current_task == "forecasting":
     st.markdown("**:red[Cette fonctionnalité n'est pas encore disponible - Diese Funktion ist noch nicht verfügbar - Questa funzione non è ancora disponibile - This function is not yet available]**")
     st.markdown(prompts_labels.sampleExplanation[ss.language])
     st.markdown(prompts_labels.properlyFormattedCsv[ss.language])
     st.markdown(prompts_labels.sampleTable)
-
+# reporting
 if 'current_task' in ss and ss.current_task == "reporting":
+    # set state for the reporting section
     if 'selected_regions' not in ss:
         ss.selected_regions = []
     if 'selected_codes' not in ss:
@@ -223,9 +225,10 @@ if 'current_task' in ss and ss.current_task == "reporting":
         ss.object_group = None
     if 'generate_report' not in ss:
         ss.generate_report = False
-
+    # select the report parameters
     with st.container(key='A_form'):
         st.markdown(prompts_labels.define_the_report_parameters[ss.language])
+        # select canton, lake, river or city
         with st.container(key='select_region_type', border=True):
             st.markdown(prompts_labels.labels['select_report_type'][ss.language])
             region = st.pills(
@@ -355,8 +358,7 @@ if 'current_task' in ss and ss.current_task == "reporting":
 
                     st.button('Generate report', key='generate_report', type='primary', disabled=their_is_not_report_data)
 
-        else:
-            st.markdown(" ")
+       
     st.button(
             label =prompts_labels.labels["reset_options"][ss.language],
             key='reset_options',

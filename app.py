@@ -150,7 +150,7 @@ st.set_page_config(
 language = st.radio("Select language", ["English", "German", "French", "Italian"], horizontal=True, key='language')
 
 if 'current_task' not in ss:
-    ss.current_task = Nones
+    ss.current_task = None
 
 with st.sidebar:
     st.markdown("**Decision support from the field**")

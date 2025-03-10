@@ -41,19 +41,6 @@ agg_groups = {
     Y: tendencies
 }
 
-# css formatting for tables
-# format_kwargs = dict(precision=2, thousands="'", decimal=",")
-#
-# header_row = {'selector':'th', 'props': 'background-color: #FFF; font-size:14px; text-align:left; width: auto; word-break: keep-all;'}
-# even_rows = {"selector": 'tr:nth-child(even)', 'props': 'background-color: rgba(139, 69, 19, 0.08);'}
-# odd_rows = {'selector': 'tr:nth-child(odd)', 'props': 'background: #FFF;'}
-# table_font = {'selector': 'tr', 'props': 'font-size: 12px;'}
-# table_data = {'selector': 'td', 'props': 'padding:4px; font-size:12px;text-align: center;'}
-# table_caption_top = {'selector': 'caption', 'props': 'caption-side: top; font-size:1em; text-align: left; margin-bottom: 10px;'}
-# table_border = {'selector': 'table, th, tr, td', 'props': 'border: 1px solid black; border-collapse: collapse;'}
-#
-# table_css_styles = [even_rows, odd_rows, table_font, header_row, table_data, table_border, table_caption_top]
-
 query_embedding = OpenAIEmbeddings(model="text-embedding-ada-002")
 consumer = os.getenv("MONGO_DB_CONSUMER_URI")
 def langchain_receiver(message: str) -> []:
@@ -88,25 +75,21 @@ def create_regional_options(data, region):
         options = data[data.feature_type == label]['feature_name'].unique()
         return options
 
-def filter_data(data, ss):
+def location_filter_data(data, state):
     # If selected_objects is None, create a mask that doesn't filter out any rows.
-    if len(ss.selected_codes) == 0:
-        code_mask = pd.Series(True, index=data.index)
-    else:
-        code_mask = data.code.isin(ss.selected_codes)
 
-    if ss.region in ['Canton', 'City']:
-        label = ss.region.lower()
-        region_mask = data[label].isin(ss.selected_regions)
-        if ss.feature_type in ['Lake', 'River']:
-            feature_type = ss.feature_type.lower()[0]
-            mask = (data.feature_type == feature_type) & region_mask & code_mask
+    if state.region in ['Canton', 'City']:
+        label = state.region.lower()
+        region_mask = data[label].isin(state.selected_regions)
+        if state.feature_type in ['Lake', 'River']:
+            feature_type = state.feature_type.lower()[0]
+            mask = (data.feature_type == feature_type) & region_mask
         else:
-            mask = region_mask & code_mask
+            mask = region_mask
         return data[mask]
 
-    if ss.region in ['Lake', 'River']:
-        mask = data.feature_name.isin(ss.selected_regions) & code_mask
+    if state.region in ['Lake', 'River']:
+        mask = data.feature_name.isin(state.selected_regions)
         return data[mask]
 
 
@@ -130,138 +113,7 @@ def extract_roughdraft_text(aresult: list[dict]) -> str:
         rough += label.capitalize() +'\n\n'+ description + '\n\n'
     return rough
 
-# def clean_string(text: str) -> str:
-#     """
-#     Removes accents, special characters, and spaces from a string.
-#
-#     This function normalizes the input string to decompose accents, removes accents by keeping only ASCII characters,
-#     and removes special characters and spaces.
-#
-#     Args:
-#         text (str): The input string to be cleaned.
-#
-#     Returns:
-#         str: The cleaned string with accents, special characters, and spaces removed.
-#     """
-#
-#     # normalize to decompose accents
-#     text = unicodedata.normalize("NFD", text)
-#
-#     # remove accents by keeping only ASCII characters
-#     text = text.encode("ascii", "ignore").decode("utf-8")
-#
-#     # remove special characters and spaces
-#     text = re.sub(r"[^a-zA-Z0-9]", "", text)
-#
-#     return text
 
-#
-#
-# def indentify_report_type(app_params: dict = None):
-#
-#     if len(app_params['cantons']) > 0:
-#         pass
-#     if len(app_params['cities']) > 0:
-#         pass
-#     if len(app_params['selected_features']):
-#         pass
-#
-#     return app_params
-#
-# def report_selected_cantons(app_params: dict):
-#
-#     for canton in app_params['cantons']:
-#         pass
-#     return app_params
-#
-# #
-#
-#
-#
-# class ReportMeta(BaseModel):
-#     """
-#     The `ReportMeta` class contains the metadata needed to create a baseline report for a subset of data.
-#
-#     Each report has an associated `ReportMeta` instance that defines the parameters for filtering and generating the report.
-#
-#     Attributes:
-#         start (Optional[str]): The start of the requested date range, string date in format YYYY-mm, e.g., 2020-01.
-#         end (Optional[str]): The end of the requested date range, string date in format YYYY-mm, e.g., 2020-01.
-#         name (Optional[str]): The name of the directory where the report components will be stored.
-#         report_codes (Optional[List[str]]): The objects of interest in OSPAR or JRC code, list of strings, e.g., ["G1", "G2"].
-#         code_types (Optional[List[str]]): The use category of the objects, e.g., personal-hygiene, construction.
-#         columns_of_interest (Optional[List[str]]): The feature columns for analysis, list of strings, e.g., ["column", "names"].
-#         info_columns (Optional[List[str]]): The possible subsets in a report, list of strings, e.g., ["column", "names"].
-#         feature_name (Optional[str]): The name of the lake or river if the report is about a lake or river.
-#         feature_type (Optional[str]): Designates the report as either river, lake, or both.
-#         boundary (Optional[str]): If the report is limited by administrative boundaries: canton, city, or survey area.
-#         boundary_name (Optional[str]): The name of the canton, city, or survey area.
-#         title_notes (Optional[str]): String for title notes.
-#         code_group_category (Optional[str]): The family descriptive name of the objects under consideration.
-#         roughdraft_name (Optional[str]): String for rough draft name.
-#         report_subtitle (str): String for report subtitle.
-#         author (str): The author of the report.
-#         local_directory (Optional[str]): The parent directory of the reports.
-#
-#     Methods:
-#         file_name: Defines the local directory for report components.
-#         report_title: Builds the rough draft title from meta-data attributes.
-#         get: Retrieve the value of an attribute by name.
-#     """
-#
-#     start: Optional[str] = Field(None, description="The start of the requested date range, string date in format YYYY-mm, e.g., 2020-01")
-#     end: Optional[str] = Field(None, description="The end of the requested date range, string date in format YYYY-mm, e.g., 2020-01")
-#     name: Optional[str] = Field(None, description="The name of the directory where the report components will be stored")
-#     report_codes: Optional[List[str]] = Field(None, description='The obects of interest in OSPAR or JRC code, list of strings, e.g., ["G1", "G2"]')
-#     code_types: Optional[List[str]] = Field(None, description='The use category of the objects ie. personal-hygiene, construction, list of strings, e.g., ["personal", "profesional"]')
-#     columns_of_interest: Optional[List[str]] = Field(None, description='The feature columns for analysis list of strings, e.g., ["column", "names"]')
-#     info_columns: Optional[List[str]] = Field(None, description='The possible subsets in a report, list of strings, e.g., ["column", "names"]')
-#     feature_name: Optional[str] = Field(None, description="If the report is about a lake or river this is the name of the lake or river")
-#     feature_type: Optional[str] = Field(None, description="Designates the report as either river, lake or both")
-#     boundary: Optional[str] = Field(None, description="If the report is limited by adminstinstrative boundaries: canton, city or survey area")
-#     boundary_name: Optional[str] = Field(None, description="The name of the canton, city or survey area")
-#     title_notes: Optional[str] = Field('This is the default value of titles notes', description="String for title notes")
-#     code_group_category: Optional[str] = Field(None, description="The family descriptive name of the objects under consideration")
-#     roughdraft_name: Optional[str] = Field('rough_draft.md', description="String for rough draft name")
-#     report_subtitle: str = Field(None, description="String for report subtitle")
-#     author: str = "AI reporter from hammerdirt"
-#     local_directory: str = Field(None, description="The parent directory of the reports")
-#
-#     @property
-#     def file_name(self) -> Optional[str]:
-#         """Defines the local directory for report components"""
-#
-#         if self.name and self.code_group_category and self.local_directory:
-#             the_directory = clean_string(self.name + self.code_group_category)
-#             the_location = f'{self.local_directory}/{the_directory}/'
-#             return the_location
-#         else:
-#             return None
-#
-#     @property
-#     def report_title(self) -> Optional[str]:
-#         """Builds the rough draft title from meta-data attributes"""
-#
-#         if self.name and self.boundary:
-#             aname = self.name.capitalize()
-#             return f'{aname} {self.boundary}'
-#         elif self.name and not self.boundary and self.feature_type:
-#             aname = self.name.capitalize()
-#             return f'{aname} {self.feature_type}'
-#         else:
-#             return None
-#
-#     def get(self, attribute: str, default=None):
-#         """Retrieve the value of an attribute by name.
-#
-#         Args:
-#             attribute (str): The name of the attribute to retrieve.
-#             default: The value to return if the attribute does not exist or is None.
-#
-#         Returns:
-#             The value of the attribute or the default value if not found.
-#         """
-#         return getattr(self, attribute, default)
 class SurveyReport:
     """
     The SurveyReport class is a container for the data and methods that are used to generate a report from a survey data set.
@@ -683,91 +535,7 @@ def survey_totals_for_all_info_cols(survey_report: SurveyReport, topic: str = No
         results.append(survey_totals_boundary(survey_report, [col]))
 
     return results
-#
-# def translate_state_to_meta(state: dict, code_groups: pd.DataFrame, location: str, boundary: str = None) -> ReportMeta:
-#     """
-#     Converts the form state into a ReportMeta object. The ReportMeta object is used to filter the data and generate reports.
-#
-#     Parameters
-#     ----------
-#     state : dict
-#         A dictionary containing the form state with keys such as 'start_date', 'end_date', 'feature_type', and 'codes'.
-#     code_groups : pd.DataFrame
-#         A DataFrame containing code group information.
-#     location : str
-#         The location name.
-#     boundary : str
-#         The boundary type (e.g., canton, city).
-#
-#     Returns
-#     -------
-#     reporting_methods.ReportMeta
-#         A ReportMeta object with the necessary metadata for generating reports.
-#     """
-#     meta = {
-#         "name": location,
-#         "start": state['date_range']['start'].strftime('%Y-%m-%d'),
-#         "end": state['date_range']['end'].strftime('%Y-%m-%d'),
-#         "feature_type": state['feature_type'],
-#         "code_group_category": "Selected Codes",
-#         "boundary": boundary,
-#         "boundary_name": location if boundary else None,
-#         "feature_name": location if not boundary else None,
-#         "report_codes": state['selected_objects'],
-#         "info_columns": info_columns,
-#         "columns_of_interest": feature_variables
-#     }
-#
-#     meta['report_title'] = f"{meta['name']} {boundary}"
-#     meta['report_subtitle'] = f"Lake, river or park: {meta['feature_type']}"
-#     meta['title_notes'] = "Proof of concept AI assisted reporting"
-#     meta['author'] = "hammerdirt analyst"
-#     meta['code_types'] = code_groups.loc[meta['report_codes']].groupname.unique()
-#
-#     return ReportMeta(**meta)
 
-# def filter_dataframe_with_reportmeta(report_meta: ReportMeta, data: pd.DataFrame) -> pd.DataFrame:
-#     """
-#     Filters the DataFrame based on the conditions provided in the `ReportMeta` object.
-#
-#     This function applies various filters to the survey data based on the metadata provided in the `ReportMeta` object.
-#
-#     Args:
-#         report_meta (ReportMeta): An instance of `ReportMeta` containing the metadata for filtering the data.
-#         data (pd.DataFrame): The DataFrame containing the survey data.
-#
-#     Returns:
-#         pd.DataFrame: The filtered DataFrame.
-#     """
-#     f_data = data.copy()
-#     print('\nfiltering data with report meta\n')
-#     print(report_meta)
-#
-#     if report_meta.get('start'):
-#         f_data = f_data[f_data['date'] >= f"{report_meta.start}"]
-#
-#     if report_meta.get('end'):
-#         f_data = f_data[f_data['date'] <= f"{report_meta.end}"]
-#
-#     if report_meta.get('boundary') and report_meta.boundary_name:
-#         boundary = report_meta.boundary
-#         boundary_name = report_meta.boundary_name
-#         f_data = f_data[f_data[boundary] == boundary_name]
-#
-#     if report_meta.get('feature_type'):
-#         if report_meta.feature_type == 'both':
-#             pass
-#         else:
-#             f_data = f_data[f_data['feature_type'] == report_meta.feature_type]
-#
-#     if report_meta.get('feature_name'):
-#         f_data = f_data[f_data['feature_name'] == report_meta.feature_name]
-#
-#     if report_meta.get('report_codes'):
-#         codes = report_meta.report_codes
-#         f_data = f_data[f_data['code'].isin(codes)]
-#
-#     return f_data
 
 def baseline_report_and_data(data: pd.DataFrame, state: dict = None) -> str:
     """
@@ -878,6 +646,7 @@ def map_markers(f_data: pd.DataFrame, map_coords: pd.DataFrame) -> pd.DataFrame:
     df.rename(columns={'sample_id': 'nsamples', 'date': 'last sample'}, inplace=True)
     df.reset_index(drop=True, inplace=True)
     return df
+
 def scatter_map(f_data: pd.DataFrame, map_coords: pd.DataFrame) -> tuple[px.scatter_map, pd.DataFrame]:
     """
     Generates a map with markers using Plotly's scatter_map.
@@ -931,27 +700,6 @@ def scatterplot(data: pd.DataFrame, color_by: [], language: str) -> px.scatter:
     Returns:
         px.scatter: The generated Plotly scatter plot figure.
     """
-
-    # combined_report = len(state['selected_regions']) > 1
-    #
-    # if state['region'] == 'Canton':
-    #     if combined_report:
-    #         groups = ['sample_id', 'canton', 'date']
-    #         color_by = 'canton'
-    #     else:
-    #         groups = ['sample_id', 'city', 'date']
-    #         color_by = 'city'
-    # if state['region'] == 'City':
-    #    groups = ['sample_id', 'city', 'date']
-    #    color_by = 'city'
-    # if state['region'] in ['Lake', 'River']:
-    #     if combined_report:
-    #         groups = ['sample_id', 'feature_name', 'date']
-    #         color_by = 'feature_name'
-    #     else:
-    #         groups = ['sample_id', 'city', 'date']
-    #         color_by = 'city'
-    # new_data = data.groupby(groups, as_index=False)['pcs/m'].sum()
 
     fig = px.scatter(
         data,

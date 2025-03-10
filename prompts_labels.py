@@ -5,14 +5,12 @@ openning = {
     "Italian": "Lo stato delle cose"
 }
 
-
 secondopenning = {
     "English": "Making sense of litter counts at the beach. A practical application of citizen science: Decision Support.",
     "French": "Donner un sens aux comptages de déchets sur la plage. Une application pratique de la science citoyenne : aide à la décision.",
     "German": "Sinnvolle Auswertung von Müllzählungen am Strand. Eine praktische Anwendung der Bürgerwissenschaft: Entscheidungsunterstützung.",
     "Italian": "Dare un senso ai conteggi dei rifiuti in spiaggia. Un'applicazione pratica della scienza civica: supporto alle decisioni."
 }
-
 
 tasks = {
     "English": {
@@ -43,8 +41,6 @@ chat_rag = {
     "German": "Hallo, ich bin hier, um Fragen zur Überwachung von Strandmüll, Protokollen und Anwendungen zu beantworten.",
     "Italian": "Ciao, sono qui per rispondere a domande sul monitoraggio dei rifiuti in spiaggia, protocolli e applicazioni."
 }
-
-
 
 # Evaluate a sample
 sampleExplanation = {
@@ -87,7 +83,6 @@ sampleExplanation = {
         " inserire la descrizione dell'oggetto o il codice. Ricorda che puoi cercare il codice nella barra laterale."
     )
 }
-
 
 properlyFormattedCsv = {
     "English": (
@@ -294,8 +289,6 @@ data_info_text = {
     )
 }
 
-
-
 what_would_you_like_to_do = {
     "English": "Tasks: What would you like to do?",
     "French": "Tâches : Que souhaitez-vous faire ?",
@@ -449,11 +442,41 @@ labels = {
         "Italian": ["Tutti", "Oggetti specifici", "Gruppo di oggetti"]
     },
     "code_groupnames":{
-    "English": ["All", "Specific objects", "Object group"],
-    "French": ["Tous", "Objets spécifiques", "Groupe d'objets"],
-    "German": ["Alle", "Spezifische Objekte", "Objektgruppe"],
-    "Italian": ["Tutti", "Oggetti specifici", "Gruppo di oggetti"]
-}
+        "English": ["All", "Specific objects", "Object group"],
+        "French": ["Tous", "Objets spécifiques", "Groupe d'objets"],
+        "German": ["Alle", "Spezifische Objekte", "Objektgruppe"],
+        "Italian": ["Tutti", "Oggetti specifici", "Gruppo di oggetti"]
+    },
+    "reset_options" : {
+        "English": "Reset options",
+        "French": "Réinitialiser les options",
+        "German": "Optionen zurücksetzen",
+        "Italian": "Reimposta opzioni"
+    },
+    "no_rough_draft_yet" : {
+        "English": "No rough draft yet",
+        "French": "Pas encore de brouillon",
+        "German": "Noch kein Entwurf",
+        "Italian": "Nessuna bozza ancora"
+    },
+    "making_your_report" : {
+        "English": "Making your report",
+        "French": "Création de votre rapport",
+        "German": "Erstellung Ihres Berichts",
+        "Italian": "Creazione del tuo rapporto"
+    },
+    "parameters_not_set" : {
+        "English": "Parameters not set",
+        "French": "Paramètres non définis",
+        "German": "Parameter nicht festgelegt",
+        "Italian": "Parametri non impostati"
+    },
+    'generate_report': {
+        "English": "Generate report",
+        "French": "Générer un rapport",
+        "German": "Bericht erstellen",
+        "Italian": "Genera rapporto"
+    }
 
 }
 

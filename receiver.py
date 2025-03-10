@@ -1,20 +1,17 @@
 # dataoperations
-
-
-import pymongo
 from pymongo import MongoClient
 import os
 from dotenv import load_dotenv
 from langchain_openai import OpenAIEmbeddings
-from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
+
 from langchain_openai import ChatOpenAI
 from langchain_core.messages import (
     HumanMessage,
-    AIMessage, SystemMessage, BaseMessageChunk
+    SystemMessage
 )
 
 from langchain_mongodb import MongoDBAtlasVectorSearch
-from typing import Union
+
 load_dotenv()
 
 consumer = os.getenv("MONGO_DB_CONSUMER_URI")
@@ -25,7 +22,6 @@ collection = client["ragtest"]["textchunks"]
 query_embedding = OpenAIEmbeddings(model="text-embedding-ada-002")
 model_args_streaming = dict(name='openai', model="gpt-4o-mini", temperature=0.6, max_tokens=1000)
 chat_llm = ChatOpenAI(**model_args_streaming)
-
 
 def embed_query(query):
     embedded = query_embedding.embed_query(query)
@@ -70,17 +66,6 @@ def summarize_retrieved_docs_prompt(context, question):
     ]
     return messages
 
-# a_report_prompt = ChatPromptTemplate.from_messages(
-#             [
-#                 (
-#                     'system',
-#                     the_report_prompt
-#                 ),MessagesPlaceholder(variable_name="messages")
-#             ]
-#         )
-#
-#         the_report_agent = a_report_prompt | chat_llm
-
 def rag_response_prompt(question, context):
     prompt = (
         f"You have recieved the following question: {question}.",
@@ -91,11 +76,6 @@ def rag_response_prompt(question, context):
         HumanMessage(content=context)
     ]
     return messages
-
-
-
-def response_with_question(message):
-    pass
 
 
 def response_to_question(message: str = None) -> dict:
@@ -118,7 +98,6 @@ def langchain_receiver(message: str) -> []:
 
     retriever = vectorstore.as_retriever(search_kwargs={"k": 5}, search_type='similarity')
     docs = retriever.invoke(message)
-    # print(docs[0])
     content = [x.page_content for x in docs]
     context = '\n\n'.join(content)
 

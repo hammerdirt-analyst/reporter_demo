@@ -2,7 +2,7 @@
 
 The reporter is an implementation of llms and ML pipelines to report beach litter surveys. 
 
-## Submission to the prtotype fund
+## Submission to the prototype fund
 
 1. [Sustainable digitalization and digital sufficiency ](https://prototypefund.opendata.ch/fr/a-propos/prototypes-pour-la-transformation-systemique/)
 
@@ -10,6 +10,8 @@ The reporter is an implementation of llms and ML pipelines to report beach litte
 
 **The trash along lakes and rivers** is an official theme of Swiss Federal Office of The Environment:
 1. https://www.bafu.admin.ch/bafu/fr/home/themes/dechets/dossiers/des-dechets-aux-abords-des-lacs-et-cours-d-eau-suisses.html
+
+**Technical documents and the role of citizen science** : check `resources/reference_texts` for the current set of documents either in the RAG application or selected for inclusion.
 
 __It is based on a lot of previous work:__
 

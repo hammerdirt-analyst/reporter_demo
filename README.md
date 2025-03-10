@@ -18,7 +18,7 @@ __It is based on a lot of previous work:__
 * [IQAASL](https://github.com/hammerdirt-analyst/IQAASL-End-0f-Sampling-2021) : The federal report on trash along lakes and rivers
 * [Reporting Volunteer Observations](https://hammerdirt-analyst.github.io/feb_2024/titlepage.html) : Methods for reporting volunteer observtions and the role of AI
 * [Solid Waste Team EPFL](https://github.com/hammerdirt-analyst/solid-waste-team) : Predicting beach litter values with EPFL students
-* [Rvealing the role of land use in macro litter distribution](https://www.sciencedirect.com/science/article/pii/S0269749124016257) : Peer review article on the role of land use in litter distribution
+* [Revealing the role of land use in macro litter distribution](https://www.sciencedirect.com/science/article/pii/S0269749124016257) : Peer review article on the role of land use in litter distribution
 * [Plastock](https://associationsauvegardeleman.github.io/plastock/) : The results of 12 months of beach litter surveys on Lac Léman in 2022
 * [Probability of trash](https://github.com/hammerdirt-analyst/finding-one-object) : The probability of finding one object on a beach, using conditional probability
 

@@ -116,7 +116,7 @@ def load_survey_data():
 
 @st.cache_data
 def load_codes():
-    codes = pd.read_csv("data/end_process/new_codes.csv")
+    codes = pd.read_csv("data/end_process/codes.csv")
     return codes
 
 @st.cache_data

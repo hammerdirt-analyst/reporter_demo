@@ -646,6 +646,7 @@ def map_markers(f_data: pd.DataFrame, map_coords: pd.DataFrame) -> pd.DataFrame:
     df.rename(columns={'sample_id': 'nsamples', 'date': 'last sample'}, inplace=True)
     df.reset_index(drop=True, inplace=True)
     return df
+
 def scatter_map(f_data: pd.DataFrame, map_coords: pd.DataFrame) -> tuple[px.scatter_map, pd.DataFrame]:
     """
     Generates a map with markers using Plotly's scatter_map.
@@ -699,27 +700,6 @@ def scatterplot(data: pd.DataFrame, color_by: [], language: str) -> px.scatter:
     Returns:
         px.scatter: The generated Plotly scatter plot figure.
     """
-
-    # combined_report = len(state['selected_regions']) > 1
-    #
-    # if state['region'] == 'Canton':
-    #     if combined_report:
-    #         groups = ['sample_id', 'canton', 'date']
-    #         color_by = 'canton'
-    #     else:
-    #         groups = ['sample_id', 'city', 'date']
-    #         color_by = 'city'
-    # if state['region'] == 'City':
-    #    groups = ['sample_id', 'city', 'date']
-    #    color_by = 'city'
-    # if state['region'] in ['Lake', 'River']:
-    #     if combined_report:
-    #         groups = ['sample_id', 'feature_name', 'date']
-    #         color_by = 'feature_name'
-    #     else:
-    #         groups = ['sample_id', 'city', 'date']
-    #         color_by = 'city'
-    # new_data = data.groupby(groups, as_index=False)['pcs/m'].sum()
 
     fig = px.scatter(
         data,

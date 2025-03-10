@@ -15,18 +15,20 @@ import prompts_labels
 
 load_dotenv()
 
+model = "gpt-4o"
+
 # data base connections
-model_args_streaming = dict(name='openai', model="gpt-4o", temperature=0.5, max_tokens=2000)
+model_args_streaming = dict(name='openai', model=model, temperature=0.5, max_tokens=2000)
 query_embedding = OpenAIEmbeddings(model="text-embedding-ada-002")
 consumer = os.getenv("MONGO_DB_CONSUMER_URI")
 chat_llm = ChatOpenAI(**model_args_streaming)
 
 
-reference_cantons = ['Vaud', 'Zürich', 'Bern']
-reference_lakes = ['Lac Léman', 'Lac de Neuchatêl', 'Bielersee', 'Thunersee', 'Zürichsee']
-reference_land_use = ['Almost all buildings', 'Mostly buildings some forest', 'Equal buildings forest and aggriculture', 'Mostly forest some buildings', 'Almost all Forest and Agriculture']
-filters = ['selected_cantons', 'selected_cities', 'selected_features', 'selected_feature_type', 'start_date', 'end_date', 'selected_objects', 'selected_codegroups', 'selected_codes']
-
+# reference_cantons = ['Vaud', 'Zürich', 'Bern']
+# reference_lakes = ['Lac Léman', 'Lac de Neuchatêl', 'Bielersee', 'Thunersee', 'Zürichsee']
+# reference_land_use = ['Almost all buildings', 'Mostly buildings some forest', 'Equal buildings forest and aggriculture', 'Mostly forest some buildings', 'Almost all Forest and Agriculture']
+# filters = ['selected_cantons', 'selected_cities', 'selected_features', 'selected_feature_type', 'start_date', 'end_date', 'selected_objects', 'selected_codegroups', 'selected_codes']
+filters = ["region", "feature_type", "selected_regions"]
 
 def rag_response_system_prompt(context: str, sources) -> str:
     print('rag response system')
@@ -50,13 +52,13 @@ def chat_with_references():
     print('changing to chat')
     ss.current_task = "chatting"
 
-def display_current_parameters():
+def display_current_parameters(state):
     print('displaying current parameters')
     current_params = {}
     if ss.current_task == "reporting":
         for filter in filters:
-            if filter in ss:
-                current_params.update({filter: ss[filter]})
+            if filter in state:
+                current_params.update({filter: state[filter]})
     if ss.current_task == "forecasting":
         if 'reference_canton' in ss:
             current_params.update({"reference_canton": ss['reference_canton']})
@@ -65,7 +67,7 @@ def display_current_parameters():
         if 'reference_land_use' in ss:
             current_params.update({"reference_land_use": ss['reference_land_use']})
     if ss.current_task == "chatting":
-        current_params.update({"llm model": "gpt-4o-mini"})
+        current_params.update({"llm model": model })
 
     return current_params
 
@@ -114,7 +116,7 @@ def load_survey_data():
 
 @st.cache_data
 def load_codes():
-    codes = pd.read_csv("data/end_process/codes.csv")
+    codes = pd.read_csv("data/end_process/new_codes.csv")
     return codes
 
 @st.cache_data
@@ -128,7 +130,13 @@ def lat_lon():
     lat_lon = beaches()[['slug', 'latitude', 'longitude']].set_index('slug')
     return lat_lon
 
-ss.language = 'French'
+if 'reset_options' in ss and ss['reset_options'] is True:
+    print('resetting')
+    # print(ss.keys())
+    for key in ss.keys():
+        print(key)
+        del ss[key]
+
 st.set_page_config(
     page_title="The state of things",
     page_icon="resources/goodimage.jpeg",
@@ -137,6 +145,11 @@ st.set_page_config(
         'About': "# This digital assistant helps put local environmental observations in the context of regional and national strategies."
     }
 )
+
+
+language = st.radio("Select language", ["English", "German", "French", "Italian"], horizontal=True, key='language')
+
+# ss.language = 'Italian'
 
 if 'current_task' not in ss:
     ss.current_task = None
@@ -157,7 +170,7 @@ with st.sidebar:
     with st.expander("**Articles in Retrieval Augmented Generation (RAG)**", expanded=False):
         st.markdown(prompts_labels.current_articles_rag)
 
-    display_params = display_current_parameters()
+    display_params = display_current_parameters(ss)
 
     if ss.current_task is None:
         st.markdown('**Current Task: None**')
@@ -186,9 +199,6 @@ with st.container(key="task_container"):
     with col3:
         st.button(prompts_labels.tasks[ss.language]["Evaluate a sample / get a forecast"], type='primary', on_click=forecast_values, use_container_width=True,
                   key='forecasting')
-# with st.container(key="task_workspace"):
-#     if ss.current_task is None:
-#         st.write("Please select a task")
 
 if 'current_task' in ss and ss.current_task == "forecasting":
     st.markdown("**:red[Cette fonctionnalité n'est pas encore disponible - Diese Funktion ist noch nicht verfügbar - Questa funzione non è ancora disponibile - This function is not yet available]**")
@@ -202,7 +212,7 @@ if 'current_task' in ss and ss.current_task == "reporting":
     if 'selected_codes' not in ss:
         ss.selected_codes = []
     if 'roughdraft' not in ss:
-        ss.roughdraft = "No roughdraft yet"
+        ss.roughdraft = prompts_labels.labels["no_rough_draft_yet"][ss.language]
     if 'report' not in ss:
         ss.report = False
     if 'region' not in ss:
@@ -211,6 +221,8 @@ if 'current_task' in ss and ss.current_task == "reporting":
         ss.feature_type = None
     if 'object_group' not in ss:
         ss.object_group = None
+    if 'generate_report' not in ss:
+        ss.generate_report = False
 
     with st.container(key='A_form'):
         st.markdown(prompts_labels.define_the_report_parameters[ss.language])
@@ -289,16 +301,14 @@ if 'current_task' in ss and ss.current_task == "reporting":
                 # the code options are dependent on the selected regions
                 # filter the data with the paramters up to this point and
                 # and define the availble code options
-                code_options = rmn.filter_data(load_survey_data(), ss).code.unique()
-                code_options = sorted(code_options)
+                code_options = rmn.location_filter_data(load_survey_data(), ss)
+                code_options = sorted(code_options.code.unique())
                 groupnames = load_codes()[load_codes().code.isin(code_options)]['groupname'].unique()
                 groupnames = sorted(groupnames)
-                # print(groupnames)
                 code_description = load_codes()[load_codes().code.isin(code_options)][['code', prompts_labels.key_to_code_description[ss.language]]]
                 code_description = code_description.sort_values('code')
                 code_description = code_description.to_dict(orient='records')
                 code_description = {item['code']: item[prompts_labels.key_to_code_description[ss.language]] for item in code_description}
-                #
                 ss.code_description = code_description
 
                 if ss.object_group is not None:
@@ -306,7 +316,7 @@ if 'current_task' in ss and ss.current_task == "reporting":
                     print(ss.object_group)
 
                     if ss.object_group == 'Specific objects':
-                        selected_objects = st.multiselect(
+                        st.multiselect(
                             label="Select objects",
                             options=code_options,
                             format_func= lambda x: f'{x}: {ss.code_description[x]}',
@@ -315,7 +325,9 @@ if 'current_task' in ss and ss.current_task == "reporting":
                             max_selections=5,
 
                         )
-                        ss.selected_codes = selected_objects
+                        print(ss.selected_objects)
+                        ss.selected_codes = ss.selected_objects
+                        print(ss.selected_codes)
 
                     if ss.object_group == 'Object group':
                         print("\n! ss.object_group == 'object group'\n")
@@ -331,26 +343,35 @@ if 'current_task' in ss and ss.current_task == "reporting":
                         if selected_group is not None:
                             selected_objects = load_codes()[load_codes().groupname == ss.selected_group]['code'].unique()
                             ss.selected_codes = selected_objects
+
                     if ss.object_group == 'All':
                         ss.selected_codes = code_options
+
+                    report_data = rmn.location_filter_data(load_survey_data(), ss)
+                    report_data = report_data[report_data.code.isin(ss.selected_codes)]
+                    their_is_not_report_data = len(report_data) == 0
+                    if isinstance(report_data, pd.DataFrame):
+                        st.markdown(f"**{len(report_data)}** records selected")
+
+                    st.button('Generate report', key='generate_report', type='primary', disabled=their_is_not_report_data)
+
         else:
             st.markdown(" ")
-    if st.button("Reset options"):
-        # st.write(ss.keys())
-        for key in ss.keys():
-            del ss[key]
+    st.button(
+            label =prompts_labels.labels["reset_options"][ss.language],
+            key='reset_options',
+    )
+
+    if ss["reset_options"]:
+        st.markdown("resetting")
 
     with st.container(key='make report'):
-        making_report = 'selected_codes' in ss and len(ss.selected_codes) > 0
-        if making_report:
-            st.markdown("### Making your report")
-        else:
-            st.markdown("### Parameters not set")
+
         docs = ""
 
-        if making_report:
+        if ss.generate_report is True:
+            st.markdown(f'### {prompts_labels.labels["making_your_report"][ss.language]}')
 
-            report_data = rmn.filter_data(load_survey_data(), ss)
             ss.code_material = load_codes()[['code', 'material']].set_index('code')
             if len(ss.selected_regions) == 1:
                 doc, sections = rmn.baseline_report_and_data(report_data, ss)
@@ -372,8 +393,10 @@ if 'current_task' in ss and ss.current_task == "reporting":
                         sub_doc, sections = rmn.baseline_report_and_data(region_data, report_state)
                         docs += sub_doc
                 ss.roughdraft = docs
+        else:
+            st.markdown(f'### {prompts_labels.labels["parameters_not_set"][ss.language]}')
 
-    if 'roughdraft' in ss and ss.roughdraft != "No roughdraft yet" and ss.report == False:
+    if 'roughdraft' in ss and ss.roughdraft != prompts_labels.labels["no_rough_draft_yet"][ss.language] and ss.report == False:
 
         current_llm = ChatOpenAI(**model_args_streaming)
 
@@ -467,9 +490,6 @@ if 'current_task' in ss and ss.current_task == "reporting":
         user_query = st.chat_input("Type your message here...")
         if user_query is not None and user_query != "":
             st.session_state.chat_history_report.append(HumanMessage(content=user_query))
-            #docs, context, sources = rmn.langchain_receiver(user_query)
-            # print(context)
-
             the_report_prompt = prompts_labels.reporter_prompt(ss)
 
             a_report_prompt = ChatPromptTemplate.from_messages(
@@ -493,7 +513,7 @@ if 'current_task' in ss and ss.current_task == "reporting":
 
             st.session_state.chat_history_report.append(AIMessage(content=r))
     else:
-        st.markdown("No roughdraft yet")
+        st.markdown(prompts_labels.labels["no_rough_draft_yet"][ss.language])
 
 # chat with
 if 'current_task' in ss and ss.current_task == "chatting":

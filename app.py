@@ -150,11 +150,11 @@ st.set_page_config(
 language = st.radio("Select language", ["English", "German", "French", "Italian"], horizontal=True, key='language')
 
 if 'current_task' not in ss:
-    ss.current_task = None
+    ss.current_task = Nones
 
 with st.sidebar:
     st.markdown("**Decision support from the field**")
-    st.image("resources/goodimage.webp", width=400)
+    st.image("resources/images/goodimage.webp", width=400)
     st.markdown("**Roger and Shannon Erismann - 2025**\n* _Minimum viable product - AI assisted reporting_\n* _Submission to prototypefund_\n* _contact: analyst@hammerdirt.ch_")
 
     nsammples = load_survey_data().sample_id.nunique()

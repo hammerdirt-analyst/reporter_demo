@@ -20,7 +20,7 @@ __It is based on a lot of previous work:__
 * [Plastock](https://associationsauvegardeleman.github.io/plastock/) : The results of 12 months of beach litter surveys on Lac Léman in 2022
 * [Probability of trash](https://github.com/hammerdirt-analyst/finding-one-object) : The probability of finding one object on a beach, using conditional probability
 
-![hammerdirt](resources/goodimage.jpeg)
+![hammerdirt](resources/images/goodimage.jpeg)
 
 
 ## Way forward

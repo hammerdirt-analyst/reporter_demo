@@ -155,7 +155,8 @@ if 'current_task' not in ss:
 with st.sidebar:
     st.markdown("**Decision support from the field**")
     st.image("resources/images/goodimage.webp", width=400)
-    st.markdown("**Roger and Shannon Erismann - 2025**\n* _Minimum viable product - AI assisted reporting_\n* _Submission to prototypefund_\n* _contact: analyst@hammerdirt.ch_")
+
+    st.markdown("**[Roger](www.linkedin.com/in/rogererismann) and Shannon Erismann - 2025**\n* _Minimum viable product - AI assisted reporting_\n* _Submission to [prototypefund](https://prototypefund.opendata.ch/en/about/digital-sufficiency/)_\n* _more info: [hammerdirt](https://hammerdirt.ch/)_")
 
     nsammples = load_survey_data().sample_id.nunique()
     ncantons = load_survey_data().canton.nunique()

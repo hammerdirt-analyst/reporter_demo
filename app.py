@@ -15,19 +15,15 @@ import prompts_labels
 
 load_dotenv()
 
-model = "gpt-4o"
+
 
 # data base connections
+model = "gpt-4o"
 model_args_streaming = dict(name='openai', model=model, temperature=0.5, max_tokens=2000)
 query_embedding = OpenAIEmbeddings(model="text-embedding-ada-002")
 consumer = os.getenv("MONGO_DB_CONSUMER_URI")
 chat_llm = ChatOpenAI(**model_args_streaming)
 
-
-# reference_cantons = ['Vaud', 'Zürich', 'Bern']
-# reference_lakes = ['Lac Léman', 'Lac de Neuchatêl', 'Bielersee', 'Thunersee', 'Zürichsee']
-# reference_land_use = ['Almost all buildings', 'Mostly buildings some forest', 'Equal buildings forest and aggriculture', 'Mostly forest some buildings', 'Almost all Forest and Agriculture']
-# filters = ['selected_cantons', 'selected_cities', 'selected_features', 'selected_feature_type', 'start_date', 'end_date', 'selected_objects', 'selected_codegroups', 'selected_codes']
 filters = ["region", "feature_type", "selected_regions"]
 
 def rag_response_system_prompt(context: str, sources) -> str:
@@ -85,10 +81,6 @@ def format_object_group_func(option):
     print("formatting object group")
     print(res)
     return res
-
-# def format_groupname_func(option):
-#     index = prompts_labels.labels['groupname_options']["English"].index(option)  # Find index in English list
-#     return prompts_labels.labels['groupname_options'][ss.language][index]
 
 def format_groupname_func(option):
     if option is None:

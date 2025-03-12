@@ -4,7 +4,7 @@ import streamlit as st
 import pandas as pd
 import os
 from dotenv import load_dotenv
-from langchain_openai import ChatOpenAI, OpenAIEmbeddings
+from langchain_openai import ChatOpenAI, OpenAIEmbeddings, OpenAI
 from langchain_core.messages import (
     HumanMessage,
     AIMessage,
@@ -23,18 +23,19 @@ model_args_streaming = dict(name='openai', model=model, temperature=0.5, max_tok
 query_embedding = OpenAIEmbeddings(model="text-embedding-ada-002")
 consumer = os.getenv("MONGO_DB_CONSUMER_URI")
 chat_llm = ChatOpenAI(**model_args_streaming)
+report_llm = ChatOpenAI(model="gpt-4o-mini", temperature=0.3, max_tokens=2000)
 
 filters = ["region", "feature_type", "selected_regions"]
 
-def rag_response_system_prompt(context: str, sources) -> str:
-    print('rag response system')
-    system = (
-        "You are an assistant for question-answering tasks. Use the following pieces of retrieved context"
-        "to answer the question. You must include the cited Sources at the end of your response."
-        "If you don't know the answer, just say that you don't know."
-        f"\\nContext:\n\n {context}\n\nSources:\n\n{sources}"
-    )
-    return system
+# def rag_response_system_prompt(context: str, sources) -> str:
+#     print('rag response system')
+#     system = (
+#         "You are an assistant for question-answering tasks. Use the following pieces of retrieved context"
+#         "to answer the question. You must include the cited Sources at the end of your response."
+#         "If you don't know the answer, just say that you don't know."
+#         f"\\nContext:\n\n {context}\n\nSources:\n\n{sources}"
+#     )
+#     return system
 
 def forecast_values():
     print('changing to forecast')
@@ -78,17 +79,13 @@ def format_feature_type_func(option):
 def format_object_group_func(option):
     index = prompts_labels.labels['code_groupnames']["English"].index(option)  # Find index in English list
     res = prompts_labels.labels['code_groupnames'][ss.language][index]
-    print("formatting object group")
-    print(res)
     return res
 
 def format_groupname_func(option):
     if option is None:
         return "None"  # Ensure 'None' is displayed as is
-    selected_language = st.session_state.get("language", "English")  # Default to English
+    selected_language = ss.get("language", "English")  # Default to English
     res = prompts_labels.code_group_translations.get(selected_language, prompts_labels.code_group_translations["English"]).get(option, option)  # Return translated term or default
-    print("formatting group name")
-    print(res)
     return res
 
 @st.cache_data
@@ -218,6 +215,8 @@ if 'current_task' in ss and ss.current_task == "reporting":
         ss.object_group = None
     if 'generate_report' not in ss:
         ss.generate_report = False
+    if 'report_sections' not in ss:
+        ss.report_sections = {}
     # select the report parameters
     with st.container(key='A_form'):
         st.markdown(prompts_labels.define_the_report_parameters[ss.language])
@@ -349,7 +348,7 @@ if 'current_task' in ss and ss.current_task == "reporting":
                     if isinstance(report_data, pd.DataFrame):
                         st.markdown(f"**{len(report_data)}** records selected")
 
-                    st.button('Generate report', key='generate_report', type='primary', disabled=their_is_not_report_data)
+                    st.button(prompts_labels.labels['generate_report'][ss.language], key='generate_report', type='primary', disabled=their_is_not_report_data)
 
        
     st.button(
@@ -391,24 +390,18 @@ if 'current_task' in ss and ss.current_task == "reporting":
         else:
             st.markdown(f'### {prompts_labels.labels["parameters_not_set"][ss.language]}')
 
-    if 'roughdraft' in ss and ss.roughdraft != prompts_labels.labels["no_rough_draft_yet"][ss.language] and ss.report == False:
+    if 'roughdraft' in ss and ss.roughdraft != prompts_labels.labels["no_rough_draft_yet"][ss.language]:
 
-        current_llm = ChatOpenAI(**model_args_streaming)
+        if 'introduction' not in ss.report_sections:
+            intro_messages = prompts_labels.summarize_section_prompt(prompts_labels.introduction_prompt(ss))
+            introduction = report_llm.stream(intro_messages)
+            intro_stream = st.write_stream(introduction)
+            ss.report_sections['introduction'] = intro_stream
+        else:
+            st.write(ss.report_sections['introduction'])
 
-        intro_prompt = prompts_labels.introduction_prompt(ss)
-        messages = [
-            SystemMessage(
-                content="Follow the instruction in the message"),
-
-            HumanMessage(content=intro_prompt)
-
-        ]
-        introduction = current_llm.stream(messages)
-        intro_stream = st.write_stream(introduction)
 
         with st.container(key='map', border=True):
-            st.markdown("### Map of survey locations")
-
             config = {
                 "displayModeBar": True,
                 "toImageButtonOptions": {
@@ -420,17 +413,20 @@ if 'current_task' in ss and ss.current_task == "reporting":
                 },
             }
             map_fig, map_markers = rmn.scatter_map(report_data, lat_lon())
-            st.session_state["map_markers"] = map_markers
+            ss["map_markers"] = map_markers
             st.plotly_chart(map_fig, use_container_width=True)
-        admin_prompt = prompts_labels.admin_prompt_cantons_lakes(ss)
-        messages = [
-            SystemMessage(content="Follow the instruction in the message"),
-            HumanMessage(content=admin_prompt)
-        ]
-        admin = current_llm.stream(messages)
-        admin_stream = st.write_stream(admin)
+
+        if 'admin' not in ss.report_sections:
+
+            admin_messages = prompts_labels.summarize_section_prompt(prompts_labels.admin_prompt_(ss))
+            admin = report_llm.stream(admin_messages)
+            admin_stream = st.write_stream(admin)
+            ss.report_sections['admin'] = admin_stream
+        else:
+            st.write(ss.report_sections['admin'])
+
+
         with st.container(key='scatterplot', border=True):
-            st.markdown("### Scatterplot of survey results")
             combined_report = len(ss['selected_regions']) > 1
             if ss['region'] == 'Canton':
                 if combined_report:
@@ -453,29 +449,29 @@ if 'current_task' in ss and ss.current_task == "reporting":
             scatter_fig = rmn.scatterplot(new_data, color_by, ss['language'])
             st.plotly_chart(scatter_fig, use_container_width=True)
 
-        inventory_prompt = prompts_labels.inventory_prompt(ss)
-        messages = [
-            SystemMessage(
-                content="Follow the instruction in the message"),
+        if 'inventory' not in ss.report_sections:
+            inventory_messages = prompts_labels.summarize_section_prompt(prompts_labels.inventory_prompt(ss))
+            inventory = report_llm.stream(inventory_messages)
+            inventory_stream = st.write_stream(inventory)
+            ss.report_sections['inventory'] = inventory_stream
+        else:
+            st.write(ss.report_sections['inventory'])
 
-            HumanMessage(content=inventory_prompt)
-
-        ]
-        inventory = current_llm.stream(messages)
-        inventory_stream = st.write_stream(inventory)
         ss.report = True
+
         st.markdown("**View the query results below**")
         with st.expander("Query results"):
             st.markdown(ss.roughdraft)
-    if 'roughdraft' in ss and ss.roughdraft != "No roughdraft yet" and ss.report == True:
-        current_llm = ChatOpenAI(**model_args_streaming)
+
+    if 'roughdraft' in ss and ss.roughdraft != prompts_labels.labels['no_rough_draft_yet'][ss.language] and ss.report == True:
+        # chat_llm = ChatOpenAI(**model_args_streaming)
         if "messages" not in ss:
             ss.messages = []
-        if "chat_history_report" not in st.session_state:
-            st.session_state.chat_history_report = [
+        if "chat_history_report" not in ss:
+            ss.chat_history_report = [
                 AIMessage(content=prompts_labels.agent_intro[ss["language"]]),
             ]
-        for message in st.session_state.chat_history_report:
+        for message in ss.chat_history_report:
             if isinstance(message, AIMessage):
                 with st.chat_message("AI"):
                     st.write(message.content)
@@ -484,19 +480,13 @@ if 'current_task' in ss and ss.current_task == "reporting":
                     st.write(message.content)
         user_query = st.chat_input("Type your message here...")
         if user_query is not None and user_query != "":
-            st.session_state.chat_history_report.append(HumanMessage(content=user_query))
-            the_report_prompt = prompts_labels.reporter_prompt(ss)
-
-            a_report_prompt = ChatPromptTemplate.from_messages(
-                [
-                    (
-                        'system',
-                        the_report_prompt
-                    ), MessagesPlaceholder(variable_name="messages")
-                ]
-            )
-
-            the_report_agent = a_report_prompt | current_llm
+            ss.chat_history_report.append(HumanMessage(content=user_query))
+            # do a vector similarity search
+            context, sources = rmn.langchain_receiver(user_query)
+            # add context, sources and report to prompt
+            report_prompt = prompts_labels.report_chat_prompt(ss, context, sources)
+            # make the agent
+            the_report_agent = report_prompt | chat_llm
 
             with st.chat_message("Human"):
                 st.markdown(user_query)
@@ -506,7 +496,7 @@ if 'current_task' in ss and ss.current_task == "reporting":
                 response = the_report_agent.stream(query)
                 r = st.write_stream(response)
 
-            st.session_state.chat_history_report.append(AIMessage(content=r))
+            ss.chat_history_report.append(AIMessage(content=r))
     else:
         st.markdown(prompts_labels.labels["no_rough_draft_yet"][ss.language])
 
@@ -532,19 +522,10 @@ if 'current_task' in ss and ss.current_task == "chatting":
     user_query = st.chat_input("Type your message here...")
     if user_query is not None and user_query != "":
         ss.chat_history.append(HumanMessage(content=user_query))
-        docs, context, sources = rmn.langchain_receiver(user_query)
-        rag_sys = rag_response_system_prompt(context, sources)
+        context, sources = rmn.langchain_receiver(user_query)
+        rag_sys = prompts_labels.rag_response_system_prompt(context, sources)
 
-        a_report_prompt = ChatPromptTemplate.from_messages(
-            [
-                (
-                    'system',
-                    rag_sys
-                ), MessagesPlaceholder(variable_name="messages")
-            ]
-        )
-
-        the_report_agent = a_report_prompt | chat_llm
+        the_report_agent = rag_sys | chat_llm
 
         with st.chat_message("Human"):
             st.markdown(user_query)

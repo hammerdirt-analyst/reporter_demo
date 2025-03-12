@@ -60,10 +60,10 @@ def langchain_receiver(message: str) -> []:
     docs = retriever.invoke(message)
     # print(docs)
     content = [x.page_content for x in docs]
-    sources = [x.metadata['source'] for x in docs]
+    sources = list(set([x.metadata['source'] for x in docs]))
     context = '\n\n'.join(content)
 
-    return docs, context, sources
+    return context, sources
 
 def create_regional_options(data, region):
     if region in ['Canton', 'City']:

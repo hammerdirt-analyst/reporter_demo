@@ -1,42 +1,38 @@
-from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
+"""
+app.py
+author: Roger Erismann
+purpose: submission to prototypefund.opendata.ch
+
+This is the main file for the streamlit app. It is a digital assistant that helps put local environmental observations in
+ the context of regional and national strategies. The app has three main tasks: forecasting, reporting and chatting with the references.
+
+The forecasting task is not yet available. The reporting task allows the user to select a region, feature type, region(s)
+and object group to generate a report. The chat task allows the user to chat with the references. The app is multilingual
+and can be set to English, German, French or Italian. The app is designed to be a minimum viable product for AI assisted reporting.
+"""
 from streamlit import session_state as ss
 import streamlit as st
 import pandas as pd
-import os
 from dotenv import load_dotenv
-from langchain_openai import ChatOpenAI, OpenAIEmbeddings, OpenAI
+from langchain_openai import ChatOpenAI
 from langchain_core.messages import (
     HumanMessage,
     AIMessage,
-    SystemMessage
 )
-import reporting_methods_new as rmn
+import reporting_methods as rmn
 import prompts_labels
 
 load_dotenv()
 
-
-
-# data base connections
-model = "gpt-4o"
-model_args_streaming = dict(name='openai', model=model, temperature=0.5, max_tokens=2000)
-query_embedding = OpenAIEmbeddings(model="text-embedding-ada-002")
-consumer = os.getenv("MONGO_DB_CONSUMER_URI")
-chat_llm = ChatOpenAI(**model_args_streaming)
-report_llm = ChatOpenAI(model="gpt-4o-mini", temperature=0.3, max_tokens=2000)
+# llms for the chat and report
+model_chat = "gpt-4o"
+model_report = "gpt-4o-mini"
+chat_llm = ChatOpenAI(model=model_chat, temperature=0.5, frequency_penalty=0.5, max_tokens=1500)
+report_llm = ChatOpenAI(model=model_report, temperature=0.3, max_tokens=1500, frequency_penalty=0.5)
 
 filters = ["region", "feature_type", "selected_regions"]
 
-# def rag_response_system_prompt(context: str, sources) -> str:
-#     print('rag response system')
-#     system = (
-#         "You are an assistant for question-answering tasks. Use the following pieces of retrieved context"
-#         "to answer the question. You must include the cited Sources at the end of your response."
-#         "If you don't know the answer, just say that you don't know."
-#         f"\\nContext:\n\n {context}\n\nSources:\n\n{sources}"
-#     )
-#     return system
-
+# methods to set the current task
 def forecast_values():
     print('changing to forecast')
     ss.current_task = "forecasting"
@@ -64,26 +60,27 @@ def display_current_parameters(state):
         if 'reference_land_use' in ss:
             current_params.update({"reference_land_use": ss['reference_land_use']})
     if ss.current_task == "chatting":
-        current_params.update({"llm model": model })
+        current_params.update({"llm model": model_chat })
 
     return current_params
 
+# format the options according to language for the report types
 def format_report_type_func(option):
-    index = prompts_labels.labels['report_type_options']["English"].index(option)  # Find index in English list
+    index = prompts_labels.labels['report_type_options']["English"].index(option)
     return prompts_labels.labels['report_type_options'][ss.language][index]
 
 def format_feature_type_func(option):
-    index = prompts_labels.labels['feature_type_options']["English"].index(option)  # Find index in English list
+    index = prompts_labels.labels['feature_type_options']["English"].index(option)
     return prompts_labels.labels['feature_type_options'][ss.language][index]
 
 def format_object_group_func(option):
-    index = prompts_labels.labels['code_groupnames']["English"].index(option)  # Find index in English list
+    index = prompts_labels.labels['code_groupnames']["English"].index(option)
     res = prompts_labels.labels['code_groupnames'][ss.language][index]
     return res
 
 def format_groupname_func(option):
     if option is None:
-        return "None"  # Ensure 'None' is displayed as is
+        return "None"
     selected_language = ss.get("language", "English")  # Default to English
     res = prompts_labels.code_group_translations.get(selected_language, prompts_labels.code_group_translations["English"]).get(option, option)  # Return translated term or default
     return res
@@ -115,13 +112,11 @@ def beaches():
 
 @st.cache_data
 def lat_lon():
-    # beaches = pd.read_csv('data/end_process/beaches.csv')
     lat_lon = beaches()[['slug', 'latitude', 'longitude']].set_index('slug')
     return lat_lon
 
 if 'reset_options' in ss and ss['reset_options'] is True:
     print('resetting')
-    # print(ss.keys())
     for key in ss.keys():
         print(key)
         del ss[key]
@@ -135,7 +130,6 @@ st.set_page_config(
     }
 )
 
-
 language = st.radio("Select language", ["English", "German", "French", "Italian"], horizontal=True, key='language')
 
 if 'current_task' not in ss:
@@ -144,7 +138,6 @@ if 'current_task' not in ss:
 with st.sidebar:
     st.markdown("**Decision support from the field**")
     st.image("resources/images/goodimage.webp", width=400)
-
     st.markdown("**[Roger](https://www.linkedin.com/in/rogererismann) and [Shannon](https://www.linkedin.com/in/shannon-erismann-3a287746) Erismann - 2025**\n* _Minimum viable product - AI assisted reporting_\n* _Submission to [prototypefund](https://prototypefund.opendata.ch/en/about/digital-sufficiency/)_\n* _more info: [hammerdirt](https://hammerdirt.ch/)_")
 
     nsammples = load_survey_data().sample_id.nunique()
@@ -162,7 +155,6 @@ with st.sidebar:
 
     if ss.current_task is None:
         st.markdown('**Current Task: None**')
-
     else:
         st.markdown(f"**Current Task: {ss.current_task.capitalize()}**")
         st.json(display_params)
@@ -305,11 +297,9 @@ if 'current_task' in ss and ss.current_task == "reporting":
                 code_description = code_description.to_dict(orient='records')
                 code_description = {item['code']: item[prompts_labels.key_to_code_description[ss.language]] for item in code_description}
                 ss.code_description = code_description
-
+                # either select all object, object groups or specific objects
                 if ss.object_group is not None:
                     print('checking object group')
-                    print(ss.object_group)
-
                     if ss.object_group == 'Specific objects':
                         st.multiselect(
                             label="Select objects",
@@ -318,36 +308,30 @@ if 'current_task' in ss and ss.current_task == "reporting":
                             key='selected_objects',
                             label_visibility='collapsed',
                             max_selections=5,
-
                         )
-                        print(ss.selected_objects)
                         ss.selected_codes = ss.selected_objects
-                        print(ss.selected_codes)
-
                     if ss.object_group == 'Object group':
-                        print("\n! ss.object_group == 'object group'\n")
-                        print([None, *groupnames])
                         selected_group = st.selectbox(
                             label="Select object group",
-                            options=[None, *groupnames],  # Ensure None is handled properly
+                            options=[None, *groupnames],
                             key='selected_group',
                             label_visibility='collapsed',
-                            format_func=format_groupname_func  # Translate labels dynamically
+                            format_func=format_groupname_func
                         )
-
+                        # if the have selected a groupname
+                        # extract the codes for that group
                         if selected_group is not None:
                             selected_objects = load_codes()[load_codes().groupname == ss.selected_group]['code'].unique()
                             ss.selected_codes = selected_objects
-
                     if ss.object_group == 'All':
                         ss.selected_codes = code_options
-
+                    # define the report data for the report
                     report_data = rmn.location_filter_data(load_survey_data(), ss)
                     report_data = report_data[report_data.code.isin(ss.selected_codes)]
                     their_is_not_report_data = len(report_data) == 0
                     if isinstance(report_data, pd.DataFrame):
                         st.markdown(f"**{len(report_data)}** records selected")
-
+                    # user can generate the report
                     st.button(prompts_labels.labels['generate_report'][ss.language], key='generate_report', type='primary', disabled=their_is_not_report_data)
 
        
@@ -355,25 +339,27 @@ if 'current_task' in ss and ss.current_task == "reporting":
             label =prompts_labels.labels["reset_options"][ss.language],
             key='reset_options',
     )
-
     if ss["reset_options"]:
         st.markdown("resetting")
 
     with st.container(key='make report'):
 
         docs = ""
-
+        # make the report from the survey report model
         if ss.generate_report is True:
             st.markdown(f'### {prompts_labels.labels["making_your_report"][ss.language]}')
-
             ss.code_material = load_codes()[['code', 'material']].set_index('code')
+            # if only one region is selected
             if len(ss.selected_regions) == 1:
                 doc, sections = rmn.baseline_report_and_data(report_data, ss)
                 docs += doc
                 ss.roughdraft = docs
+            # if more than one region is selected
             if len(ss.selected_regions) > 1:
+                # first make a combined report
                 doc, sections = rmn.baseline_report_and_data(report_data, ss)
                 docs += doc
+                # make a report for each region
                 for region in ss.selected_regions:
                     report_state = ss.to_dict()
                     if report_state['region'] in ['Canton', 'City']:
@@ -391,17 +377,19 @@ if 'current_task' in ss and ss.current_task == "reporting":
             st.markdown(f'### {prompts_labels.labels["parameters_not_set"][ss.language]}')
 
     if 'roughdraft' in ss and ss.roughdraft != prompts_labels.labels["no_rough_draft_yet"][ss.language]:
-
+        # if the report has not been sent to inference
         if 'introduction' not in ss.report_sections:
             intro_messages = prompts_labels.summarize_section_prompt(prompts_labels.introduction_prompt(ss))
             introduction = report_llm.stream(intro_messages)
             intro_stream = st.write_stream(introduction)
             ss.report_sections['introduction'] = intro_stream
         else:
+            # other wise you what is in state
             st.write(ss.report_sections['introduction'])
 
-
         with st.container(key='map', border=True):
+            # make a map of the selected regions
+            # map config
             config = {
                 "displayModeBar": True,
                 "toImageButtonOptions": {
@@ -415,17 +403,16 @@ if 'current_task' in ss and ss.current_task == "reporting":
             map_fig, map_markers = rmn.scatter_map(report_data, lat_lon())
             ss["map_markers"] = map_markers
             st.plotly_chart(map_fig, use_container_width=True)
-
+        # if the admin section has not been sent to inference
         if 'admin' not in ss.report_sections:
-
             admin_messages = prompts_labels.summarize_section_prompt(prompts_labels.admin_prompt_(ss))
             admin = report_llm.stream(admin_messages)
             admin_stream = st.write_stream(admin)
             ss.report_sections['admin'] = admin_stream
         else:
+            # other wise you what is in state
             st.write(ss.report_sections['admin'])
-
-
+        # make a scatter plot of the selected regions
         with st.container(key='scatterplot', border=True):
             combined_report = len(ss['selected_regions']) > 1
             if ss['region'] == 'Canton':
@@ -448,15 +435,16 @@ if 'current_task' in ss and ss.current_task == "reporting":
             new_data = report_data.groupby(groups, as_index=False)['pcs/m'].sum()
             scatter_fig = rmn.scatterplot(new_data, color_by, ss['language'])
             st.plotly_chart(scatter_fig, use_container_width=True)
-
+        # if the inventory section has not been sent to inference
         if 'inventory' not in ss.report_sections:
             inventory_messages = prompts_labels.summarize_section_prompt(prompts_labels.inventory_prompt(ss))
             inventory = report_llm.stream(inventory_messages)
             inventory_stream = st.write_stream(inventory)
             ss.report_sections['inventory'] = inventory_stream
         else:
+            # other wise you what is in state
             st.write(ss.report_sections['inventory'])
-
+        # signal the completion of the report
         ss.report = True
 
         st.markdown("**View the query results below**")
@@ -464,7 +452,9 @@ if 'current_task' in ss and ss.current_task == "reporting":
             st.markdown(ss.roughdraft)
 
     if 'roughdraft' in ss and ss.roughdraft != prompts_labels.labels['no_rough_draft_yet'][ss.language] and ss.report == True:
-        # chat_llm = ChatOpenAI(**model_args_streaming)
+        # if the rough draft has been completed
+        # if the report has been sent to inference
+        # enable the chat with the report
         if "messages" not in ss:
             ss.messages = []
         if "chat_history_report" not in ss:
@@ -500,7 +490,7 @@ if 'current_task' in ss and ss.current_task == "reporting":
     else:
         st.markdown(prompts_labels.labels["no_rough_draft_yet"][ss.language])
 
-# chat with
+# chat task no report
 if 'current_task' in ss and ss.current_task == "chatting":
     with st.container(key='chat_container'):
         st.markdown(prompts_labels.chat_description[ss.language])

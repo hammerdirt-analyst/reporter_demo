@@ -1,9 +1,15 @@
+"""
+prompts_labels.py
+author: Roger Erismann
+purpose: submission to prototypefund.opendata.ch
+
+This file contains the multi-language labels for user interface and the prompts for reporting and chat.
+"""
+
 from langchain_core.messages import (
     HumanMessage,
     SystemMessage
 )
-
-
 from langchain.prompts import ChatPromptTemplate, MessagesPlaceholder
 
 
@@ -116,7 +122,6 @@ properlyFormattedCsv = {
     )
 }
 
-
 sampleTable = (
     "*Properly formatted .csv file*\n\n"
     "| code | quantity | length |\n"
@@ -152,7 +157,6 @@ report_assistant_text = {
     )
 }
 
-
 what_this_reprorting_method_does = {
     "English": (
         "**What this reporting method does**\n\n"
@@ -186,7 +190,6 @@ what_this_reprorting_method_does = {
         " nel secondo caso identifichiamo le migliori pratiche**."
     )
 }
-
 
 valuing_citizen_science = {
     "English": (
@@ -312,7 +315,6 @@ define_the_report_parameters = {
         'German': "#### Definieren Sie die Berichtsparameter",
         'Italian': "#### Definire i parametri del rapporto"
     }
-
 
 current_articles_rag = (
     "1. The guide for monitoring marine litter in European seas 2023\n"
@@ -495,6 +497,7 @@ key_to_code_description ={
     "German": "de",
     "Italian": "it"
 }
+
 code_group_translations = {
     "English": {
         'agriculture': 'agriculture',
@@ -550,7 +553,6 @@ code_group_translations = {
     }
 }
 
-
 agent_intro = {
     "English": (
         "Hi, I am the report assistant. The rough draft is loaded and available to me."
@@ -573,7 +575,6 @@ agent_intro = {
         " Puoi cercare i riferimenti disponibili nella barra laterale."
     )
 }
-
 
 chat_description = {
     "English": (
@@ -598,10 +599,8 @@ chat_description = {
 }
 
 # prompts
-
 def introduction_prompt(state):
-    """Generate a structured prompt for summarizing shoreline litter reports."""
-
+    """Generates a structured prompt for writing an introduction to the data analysis section of a shoreline litter report."""
     return f"""
     You are a research assistant in an engineering firm that assesses shoreline litter, particularly plastics and trash, along lakes and rivers in Switzerland. 
     Your team is preparing a report based on volunteer survey data monitoring environmental pollution. Your task is to write a professional, factual introduction 
@@ -631,7 +630,6 @@ def introduction_prompt(state):
     ### **LANGUAGE REQUIREMENT** ###
     Please write the response in: {state['language']}.
     """
-
 
 def admin_prompt_(state):
     """Generates a structured prompt for summarizing administrative boundaries and results by city, canton, and feature name."""
@@ -765,7 +763,7 @@ def report_chat_prompt(state, context, sources):
     {sources}
 
     ### **INSTRUCTIONS** ###
-    1. **Use only the rough draft and references** to answer questions accurately.
+    1. **Use the rough draft and references** to answer questions accurately, if you do not find an answer there you may use your exiting knowledge.
     2. **Respond in a professional, concise, and narrative style**.
     3. **Focus strictly on the following topics:**
        - Plastics, trash, or litter in the environment.
@@ -790,7 +788,7 @@ def report_chat_prompt(state, context, sources):
 system_follow_instructions_prompt = "Follow the instructions carefully and generate the required summary."
 
 def summarize_section_prompt(human_prompt):
-
+    """Generates a structured prompt for summarizing sections of a shoreline litter report."""
 
     messages = [
         SystemMessage(
@@ -800,6 +798,7 @@ def summarize_section_prompt(human_prompt):
 
     ]
     return messages
+
 def rag_response_system_prompt(context: str, sources: str):
     """Generates a structured system prompt for RAG-based question-answering with preferred context usage."""
 
@@ -809,9 +808,9 @@ def rag_response_system_prompt(context: str, sources: str):
 
     ### **HOW TO ANSWER** ###
     - **Use the retrieved context as your primary source** for answering questions.
-    - If the retrieved context does **not** provide a complete answer, you may use your own **general environmental knowledge**, 
+    - If the retrieved context does **not** provide a complete answer, you may use your own **general knowledge**, 
       but **you must prioritize the provided context** whenever relevant.
-    - **If no relevant information is found**, respond with **"I don't know."**
+    
     - Always **cite the sources** at the end of your response if they are relevant.
 
     ### **RETRIEVED CONTEXT** ###

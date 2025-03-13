@@ -1,3 +1,19 @@
+"""
+reporting_methods.py
+author: roger erismann
+purpose: submission to prototypefund.opendata.ch
+
+This module contains the methods used to generate a report from beach litter observations. This includes filter methods,
+map generation and scatter plot generation. The data used is from beach litter observtions using the MLW/OSPAR method of
+object categorization.
+
+This is a prototype that is/was (depending on when you are reading this) being developed for the prototype fund competition.
+
+The purpose or use case for this module is to create quick summaries and comparisons of beach litter observations. The use
+case is for researchers as a 'kick start' to their analysis and for stakeholders to get a quick summary of the data.
+
+The vector database is for the rag application.
+"""
 import pandas as pd
 import numpy as np
 from sklearn.metrics.pairwise import cosine_similarity
@@ -8,7 +24,9 @@ from langchain_openai import OpenAIEmbeddings
 from langchain_mongodb import MongoDBAtlasVectorSearch
 import os
 from dotenv import load_dotenv
+
 load_dotenv()
+
 # The following are the default values for the report
 report_quantiles = [.05, .25, .5, .75, .95]
 quantile_labels = ['5th', '25th', '50th', '75th', '95th']
@@ -41,12 +59,12 @@ agg_groups = {
     Y: tendencies
 }
 
+# connection to vector store
 query_embedding = OpenAIEmbeddings(model="text-embedding-ada-002")
 consumer = os.getenv("MONGO_DB_CONSUMER_URI")
 def langchain_receiver(message: str) -> []:
 
     vectorstore = MongoDBAtlasVectorSearch.from_connection_string(
-
         connection_string=consumer,
         namespace = "ragtest.textchunks",
         embedding = query_embedding,
@@ -54,11 +72,8 @@ def langchain_receiver(message: str) -> []:
         embedding_key = "embeddings",
         text_key = "content"
         )
-    # search_type = "similarity_score_threshold",
-    # search_kwargs = {"k": 1, "score_threshold": 0.2}
     retriever = vectorstore.as_retriever(search_kwargs={"k": 5}, search_type='similarity')
     docs = retriever.invoke(message)
-    # print(docs)
     content = [x.page_content for x in docs]
     sources = list(set([x.metadata['source'] for x in docs]))
     context = '\n\n'.join(content)
@@ -76,8 +91,6 @@ def create_regional_options(data, region):
         return options
 
 def location_filter_data(data, state):
-    # If selected_objects is None, create a mask that doesn't filter out any rows.
-
     if state.region in ['Canton', 'City']:
         label = state.region.lower()
         region_mask = data[label].isin(state.selected_regions)
@@ -87,11 +100,9 @@ def location_filter_data(data, state):
         else:
             mask = region_mask
         return data[mask]
-
     if state.region in ['Lake', 'River']:
         mask = data.feature_name.isin(state.selected_regions)
         return data[mask]
-
 
 def extract_roughdraft_text(aresult: list[dict]) -> str:
     """
@@ -112,7 +123,6 @@ def extract_roughdraft_text(aresult: list[dict]) -> str:
         description = theresult['prompt']['section_description']
         rough += label.capitalize() +'\n\n'+ description + '\n\n'
     return rough
-
 
 class SurveyReport:
     """
@@ -501,8 +511,6 @@ def survey_totals_boundary(survey_report: SurveyReport, info_columns: list) -> d
     # Apply str.capitalize to all string columns
     dt[string_columns] = dt[string_columns].apply(lambda col: col.str.capitalize())
     the_theme = info_columns[0]
-    # if the_theme == 'parent_boundary':
-    #     the_theme = 'survey area'
     section_label = f"### Sample results by {the_theme}"
     section_description = f"The average sample total in pcs/m\n\n"
     section_description = section_description + dt.to_markdown()
@@ -536,7 +544,6 @@ def survey_totals_for_all_info_cols(survey_report: SurveyReport, topic: str = No
 
     return results
 
-
 def baseline_report_and_data(data: pd.DataFrame, state: dict = None) -> str:
     """
     Produces a rough draft report from the survey data and report meta-data.
@@ -552,7 +559,6 @@ def baseline_report_and_data(data: pd.DataFrame, state: dict = None) -> str:
         str: A concatenated string representing the rough draft report.
     """
     # report title section
-
     title_labels = ', '.join(state['selected_regions'])
     date_min, date_max = data['date'].min(), data['date'].max()
     title = ""

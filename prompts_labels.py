@@ -600,141 +600,61 @@ chat_description = {
 
 # prompts
 def introduction_prompt(state):
-    """Generates a structured prompt for writing an introduction to the data analysis section of a shoreline litter report."""
-    return f"""
-    You are a research assistant in an engineering firm that assesses shoreline litter, particularly plastics and trash, along lakes and rivers in Switzerland. 
-    Your team is preparing a report based on volunteer survey data monitoring environmental pollution. Your task is to write a professional, factual introduction 
-    to the data analysis section.
+    """Prompt for the abstract generation task."""
+    aprompt = (
+        f"You are a research assistant in an engineering firm that assesses the levels of trash and plastics on the shoreline along lakes"
+        " and rivers in switzerland. You are part of a team that is creating a decisions support document. The data for this"
+        " document is a subset of the observations from volunteers that monitor plastics and trash in the environment. Your task is to write"
+        " the introduction to the data analysis section.\n\nThe introduction must include the following information:\n\n"
+        "1. The name of the  from the title.\n"
+        "2. The date range covered by the samples\n3. The number of samples\n4. The number of survey locations\n5. The min, max mean and median sample results, in pcs/m"
+        "6. The total quantity of objects found.\n7. The material composition of the objects found.\n8. The type of objects under consideration, either a list or the classification."
+        " The classification or the list of codes is in the subject line. If the number of objects under consideration is greater than five list a few and refer the reader"
+        " to the inventory. If the classification is given state the classification and refer the reader to the inventory for the complete list.\n\n"
+        f"The results have been prepared for you here:\n\n{state['roughdraft']}\n\n!INSTRUCTIONS!\n\n1. The information you need to write this is in the title, subtitle and summary statistics sections of the report above."
+        "\n2. You must reply in a professional narrative style.\n3. We do not want any general closing comments. just report the facts from the provided sections of the document.\n"
+        "4. Do not categorize the document type or call it a decision support document or analysis, just go ahead and do the summary.\n5. Supply only the information requested.\n"
+        f"6. Identify the objects under consideration in the first paragraph.\n\nPlease reply in the following language: {state['language']}."
+    )
+    return ''.join(aprompt)
 
-    ### **INSTRUCTIONS** ###
-    1. Extract the following key details from the provided report:
-       - **Survey location**: Identify the region from the report title.
-       - **Date range**: Mention the time period covered by the survey.
-       - **Number of samples and survey locations**.
-       - **Key statistics**: Report the min, max, mean, and median values (pcs/m of litter).
-       - **Total quantity**: The total number of objects found.
-       - **Material composition**: Breakdown of the materials found (glass, metal, plastic, etc.).
-       - **Types of objects considered**: These are classified in the subject line. If the list is too long, summarize and refer to the inventory.
-       - **These are aggregated results from multiple surveys**. 
-       - **The title of the section** should be Situation.
+def admin_prompt_cantons_lakes(state):
+    aprompt = (
+        f"You are a research assistant in an engineering firm that assesses the levels of trash and plastics on the shoreline along lakes"
+        " and rivers in switzerland. You are part of a team that is creating a decisions support document. The data for this"
+        " document is a subset of the observations from volunteers that monitor plastics and trash in the environment. Your task is to write"
+        "  the administrative boundaries and results section of the report. This includes the following sections:\n\n"
+        "1. administrative boundaries\n2. the named features in this report\n3. sample results by city\n4. sample results by canton\n5. sample results by feature_name\n\n"
+        f"The results have been prepared for you here:\n\n{state['roughdraft']}\n\n!INSTRUCTIONS!\n\n1. Summarize the sample results by city table. Include the number of cities"
+        " and name the cities three with the greatest number of samples and the highest pcs/m.\n"
+        "2. If the table 'sample results by canton' only has one row you do not need to summarize or mention it. Otherwise include the number of cantons, the canton with the greatest number of samples"
+        " and the canton with the highest pcs/m.\n3. If their is a 'sample results by feature_name' table"
+        " include the number of features: call them lakes or rivers. The lake or river with the highest pcs/m, the lake or river with the greatest number of samples and the lake or river"
+        " with the highest quantity.\n4 If their is more than one row (not including the header) in the 'sample results by feature_type' table summarize the differences otherwise do not include this section.\n"
+        "\n4. You must reply in a professional narrative style.\n5. We do not want any general closing comments. just report the facts from the provided sections of the document.\n"
+        "6. Do not categorize the document type or call it a decision support document or analysis, just go ahead and do the summary.\n7. Supply only the information requested.\n"
+        f"\n\nPlease reply in the following language: {state['language']}."
 
-    2. Write in a **concise, professional, and neutral** tone.
-    3. Do **not** include general commentary or conclusions—only summarize the relevant information.
-    4. Do **not** categorize this as a 'decision support document' or 'analysis'—just present the summary directly.
-    5. **Identify the objects under consideration in the first paragraph.**
+            )
+    return ''.join(aprompt)
 
-    ### **DATA SOURCE** ###
-
-    {state['roughdraft']}
-
-    ### **LANGUAGE REQUIREMENT** ###
-    Please write the response in: {state['language']}.
-    """
-
-def admin_prompt_(state):
-    """Generates a structured prompt for summarizing administrative boundaries and results by city, canton, and feature name."""
-
-    return f"""
-    You are a research assistant in an engineering firm that assesses shoreline litter, particularly plastics and trash, along lakes and rivers in Switzerland.
-    Your team is preparing a report based on volunteer survey data monitoring environmental pollution. Your task is to write the **administrative boundaries and results section** of the report. 
-
-    ### **SECTIONS TO COVER** ###
-    1. **Administrative Boundaries**
-    2. **Named Features in this Report**
-    3. **Sample Results by City**
-    4. **Sample Results by Canton**
-    5. **Sample Results by Feature Name** (lakes/rivers)
-
-    The relevant data has been provided below:
-
-    ### **DATA SOURCE** ###
-    {state['roughdraft']}
-
-    ### **INSTRUCTIONS** ###
-    **Title this section "Administrative Boundaries and Results".**
-    1. **Sample Results by City**:
-       - Summarize the number of cities surveyed.
-       - Identify the cities with the **highest** and **lowest** total quantity of trash.
-       - Identify the city with the **greatest number of samples**.
-       - Identify the city with the **highest pcs/m (objects per meter).**
-
-    2. **Sample Results by Canton**:
-       - If this table contains only **one row**, **skip this section**.
-       - If multiple cantons are present, summarize:
-         - The **total number of cantons** in the dataset.
-         - The **canton with the greatest number of samples**.
-         - The **canton with the highest pcs/m**.
-         - The **canton with the highest total quantity**.
-
-    3. **Sample Results by Feature Name (Lakes/Rivers)**:
-       - If this table exists, summarize:
-         - The **number of features (lakes or rivers)**.
-         - The **lake or river with the highest pcs/m**.
-         - The **lake or river with the greatest number of samples**.
-         - The **lake or river with the highest total quantity**.
-
-    4. **Sample Results by Feature Type**:
-       - If there is more than **one row (excluding headers)** in the **sample results by feature type** table, summarize the differences.
-       - If only **one row exists, omit this section**.
-
-    ### **WRITING GUIDELINES** ###
-    - **Professional, narrative style**—do not use bullet points in the response.
-    - **Only include factual information**—do not add conclusions or general commentary.
-    - **Do not categorize the document type**—do not refer to it as a "decision support document" or "analysis"; just present the summary.
-    - **Provide only the requested details**—no additional information.
-
-    ### **LANGUAGE REQUIREMENT** ###
-    Please write the response in: {state['language']}.
-    """
 
 def inventory_prompt(state):
-    """Generates a structured prompt for summarizing inventory items from the report."""
-
-    return f"""
-    You are a research assistant in an engineering firm that assesses shoreline litter, particularly plastics and trash, along lakes and rivers in Switzerland.
-    Your team is preparing a report based on volunteer survey data monitoring environmental pollution. Your task is to write the **inventory of objects** section of the report.
-
-    ### **SECTION TO COVER** ###
-    - **Inventory Items**
-
-    The relevant data has been provided below:
-
-    ### **DATA SOURCE** ###
-    {state['roughdraft']}
-
-    ### **INSTRUCTIONS** ###
-    **Title this section "Inventory Items".**
-    **1. Inventory Table Summaries:**
-       - The report contains **inventory tables for each location** listed in the title.
-       - If there are **multiple inventory tables**, summarize **each table separately**.
-       - The **summaries should appear in reverse order** of the inventory tables in the report.
-       - If there is **only one inventory table**, summarize it directly.
-
-    **2. Structure of the Summary:**
-       - Identify the **top items** based on:
-         - **Quantity** (total number found)
-         - **pcs/m** (objects per meter)
-         - **Chance of finding at least 1 item**
-         - **Percentage of total items found**
-       - The **top items** are those where the **cumulative sum of the % of total column exceeds 80%**.
-       - To determine this:
-         - **Start with the highest % of total** and **sum down the list** until the cumulative percentage **exceeds 80%**.
-         - **Begin with the first row** and continue down.
-
-    **3. Order of Summaries:**
-       - Label each summary with the **location name**.
-       - Summaries should be presented **in reverse order** of the inventory tables in the report.
-       - The **final summary** should be a **combined summary of all tables** (if multiple tables exist).
-
-    ### **WRITING GUIDELINES** ###
-    - **Professional, narrative style**—do not use bullet points in the response.
-    - **Only include factual information**—do not add conclusions or general commentary.
-    - **Do not categorize the document type**—do not refer to it as a "decision support document" or "analysis"; just present the summary.
-    - **Provide only the requested details**—no additional information.
-
-    ### **LANGUAGE REQUIREMENT** ###
-    Please write the response in: {state['language']}.
-    """
+    aprompt = (
+        f"You are a research assistant in an engineering firm that assesses the levels of trash and plastics on the shoreline along lakes"
+        " and rivers in switzerland. You are part of a team that is creating a decisions support document. The data for this"
+        " document is a subset of the observations from volunteers that monitor plastics and trash in the environment. Your task is to write"
+        " the inventory of objects section of the report. This includes the following sections of the report provided below:\n\n"
+        "inventory items\n\n"
+        f"The report has been prepared for you here:\n\n{state['roughdraft']}\n\n!INSTRUCTIONS!\n\n"
+        "If their are multiple inventory tables in the report you will produce a summary for each inventory table in the report. \n\n"
+        "If their is 'combined beach litter survery report' produce a summary of the inventory for that report also.\n\n"
+        "The summary will be the first ten items in the table, if there is less than ten items in an inventory table report them all\n\n" 
+        "For each item selected report the item name, the quantity, the pcs/m, the chance of finding at least one and the percent of total\n\n"
+        "Make a separate table for each summary\n\n"
+       f"\n\nPlease reply in the following language: {state['language']}."
+    )
+    return ''.join(aprompt)
 
 def report_chat_prompt(state, context, sources):
     """Generates a structured chat prompt for discussing report results with RAG-enhanced context."""

@@ -28,7 +28,8 @@ load_dotenv()
 model_chat = "gpt-4o"
 model_report = "gpt-4o-mini"
 chat_llm = ChatOpenAI(model=model_chat, temperature=0.5, frequency_penalty=0.5, max_tokens=1500)
-report_llm = ChatOpenAI(model=model_report, temperature=0.3, max_tokens=1500, frequency_penalty=0.5)
+report_llm = ChatOpenAI(model=model_chat, temperature=0.3, max_tokens=1500, frequency_penalty=0.5)
+inventory_llm = ChatOpenAI(model=model_report, temperature=0, max_tokens=1500)
 
 filters = ["region", "feature_type", "selected_regions"]
 
@@ -405,7 +406,7 @@ if 'current_task' in ss and ss.current_task == "reporting":
             st.plotly_chart(map_fig, use_container_width=True)
         # if the admin section has not been sent to inference
         if 'admin' not in ss.report_sections:
-            admin_messages = prompts_labels.summarize_section_prompt(prompts_labels.admin_prompt_(ss))
+            admin_messages = prompts_labels.summarize_section_prompt(prompts_labels.admin_prompt_cantons_lakes(ss))
             admin = report_llm.stream(admin_messages)
             admin_stream = st.write_stream(admin)
             ss.report_sections['admin'] = admin_stream
@@ -438,7 +439,7 @@ if 'current_task' in ss and ss.current_task == "reporting":
         # if the inventory section has not been sent to inference
         if 'inventory' not in ss.report_sections:
             inventory_messages = prompts_labels.summarize_section_prompt(prompts_labels.inventory_prompt(ss))
-            inventory = report_llm.stream(inventory_messages)
+            inventory = inventory_llm.stream(inventory_messages)
             inventory_stream = st.write_stream(inventory)
             ss.report_sections['inventory'] = inventory_stream
         else:
